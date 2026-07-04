@@ -2771,8 +2771,28 @@ const Trade = {
 };
 
 /* ---------------------------------- 11. NETWORKING (WebRTC via PeerJS) ---------------------------------- */
+// PeerJS's default `new Peer()` asks the cloud broker to hand back a long random UUID
+// (36 characters) AND generates a brand new one every time the page runs Net.init() —
+// which on mobile happens far more often than people expect, because backgrounding the
+// browser/switching apps frequently kills the tab's JS entirely, so coming back reloads
+// the page from scratch and mints a fresh Peer with a fresh random ID. That's why the
+// Room ID used to look different every time someone switched screens on their phone.
+//
+// Fix: generate our OWN short id (e.g. "dt-a1b2c3") once, save it in localStorage, and
+// ask PeerJS to use exactly that id every time — reloading the page just reuses the same
+// short id from storage instead of getting handed a new long one.
+const PEER_ID_KEY = 'demonTowerPeerId';
+function getStablePeerId(forceNew){
+  let id = forceNew ? null : localStorage.getItem(PEER_ID_KEY);
+  if(!id){
+    id = 'dt-' + Math.random().toString(36).slice(2,8);
+    localStorage.setItem(PEER_ID_KEY, id);
+  }
+  return id;
+}
 const Net = {
   peer:null, peerId:null, isHost:false, hostId:null, conns:{}, status:'idle', lastError:null,
+  _idRetries:0,
   // Full stat snapshot sent with 'hello' / 'coop_stat_push' so the host can run combat math
   // on behalf of every connected party member (co-op combat is host-authoritative).
   myStatPayload(){
@@ -2783,10 +2803,13 @@ const Net = {
   },
   init(){
     if(typeof Peer === 'undefined'){ this.status='unavailable'; this.lastError='ไม่สามารถโหลดไลบรารี PeerJS ได้ (สคริปต์จาก CDN ถูกบล็อก)'; Render.lobby(); return; }
+    this._connectWithId(getStablePeerId());
+  },
+  _connectWithId(desiredId){
     this.status = 'connecting';
     try{
-      this.peer = new Peer();
-      this.peer.on('open', id=>{ this.peerId=id; this.status='ready'; this.lastError=null; Render.lobby(); });
+      this.peer = new Peer(desiredId);
+      this.peer.on('open', id=>{ this.peerId=id; this.status='ready'; this.lastError=null; this._idRetries=0; Render.lobby(); });
       this.peer.on('connection', conn=>{
         // Auto-promote to Host on the first inbound connection. Previously a player had to
         // remember to press "สร้างห้อง (Host)" *before* their friend connected, or `isHost`
@@ -2797,8 +2820,27 @@ const Net = {
         if(!this.hostId){ this.isHost = true; this.hostId = this.peerId; }
         this.wireConn(conn);
       });
-      this.peer.on('error', err=>{ this.status='error'; this.lastError = (err&&(err.type||err.message))?(err.type||'')+' '+(err.message||''):String(err); console.warn('Peer error:',err); Render.lobby(); });
-      this.peer.on('disconnected', ()=>{ this.status='disconnected'; Render.lobby(); });
+      this.peer.on('error', err=>{
+        const type = err && err.type;
+        // Someone else on PeerJS's shared cloud broker already grabbed our short id —
+        // mint a new one, remember it for next time, and try again (once per attempt,
+        // capped so a persistent problem still surfaces as a real error).
+        if(type==='unavailable-id' && this._idRetries<5){
+          this._idRetries++;
+          try{ this.peer.destroy(); }catch(e){}
+          this._connectWithId(getStablePeerId(true));
+          return;
+        }
+        this.status='error'; this.lastError = (err&&(err.type||err.message))?(err.type||'')+' '+(err.message||''):String(err); console.warn('Peer error:',err); Render.lobby();
+      });
+      this.peer.on('disconnected', ()=>{
+        this.status='disconnected'; Render.lobby();
+        // The signalling socket dropped (common after a phone backgrounds the browser
+        // for a while) but this Peer object — and therefore our id — is still alive.
+        // Reconnecting the same instance keeps the exact same Room ID instead of
+        // forcing a fresh Peer() with a new one.
+        try{ this.peer.reconnect(); }catch(e){}
+      });
     }catch(e){ this.status='error'; this.lastError = e.message||String(e); console.warn('PeerJS unavailable', e); Render.lobby(); }
   },
   retry(){ if(this.peer){ try{ this.peer.destroy(); }catch(e){} } this.conns={}; this.init(); Toast.show('กำลังลองเชื่อมต่อใหม่...'); },
