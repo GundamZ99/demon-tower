@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json"
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#0b0710">
@@ -905,6 +905,13 @@ function grantDemonCardDrop(p, floor){
 }
 function raceName(id){ return (RACES.find(r=>r.id===id)||{}).name || id; }
 function className(id){ return (CLASSES.find(c=>c.id===id)||{}).name || id; }
+// The element tied to the player's class — this is the ONLY element a player is
+// allowed to actually play in combat. Off-element cards (e.g. from cross-element
+// tower drops or trades) still sit in the deck/bag but cannot be used to attack.
+function playerElement(p){
+  const cls = CLASSES.find(c=>c.id===p.classId);
+  return cls ? cls.card.element : null;
+}
 function pct(v,max){ return Math.max(0,Math.min(100, v/max*100)); }
 
 /* ---------------------------------- 2. STATE / SAVE ---------------------------------- */
@@ -1634,16 +1641,19 @@ const Combat = {
           <div class="hpbar-label">${Math.max(0,p.hp)} / ${p.maxHp}</div></div>
       </div>`;
     document.getElementById('combat-chance').textContent = `🎯 โอกาสสำเร็จ (โจมตีติด + หลบเต็มที่): ${lukSuccessChance(effLuk).toFixed(1)}% — ทอยลูกเต๋าได้ ≤${d20Threshold(lukSuccessChance(effLuk))}/20 จึงจะสำเร็จ`;
+    const myElem = playerElement(p);
     const activeCount = Math.min(3, p.deck.length);
     document.getElementById('combat-hand').innerHTML = '<div class="hand-grid">' + p.deck.slice(0,activeCount).map((c,i)=>{
       const isOncePerFight = c.effects && c.effects.some(e=>e.type==='once_per_fight');
       const alreadyUsed = isOncePerFight && c.skillId && this.active.usedOnce[c.skillId];
-      const effTip = c.desc ? c.desc : '';
+      const offElem = c.element !== myElem;
+      const locked = alreadyUsed || offElem;
+      const effTip = (c.desc?c.desc:'') + (offElem ? ' (ธาตุไม่ตรงกับตัวละคร ใช้ไม่ได้)' : '');
       return `
-      <div class="card ${this.active.selectedCard===i?'selected':''} ${alreadyUsed?'disabled':''}"
+      <div class="card ${this.active.selectedCard===i?'selected':''} ${locked?'disabled':''}"
            title="${effTip}"
-           onclick="${alreadyUsed?'':'Combat.selectCard('+i+')'}">
-        <span class="cname">${c.name}${alreadyUsed?' (ใช้แล้ว)':''}</span><span class="cpower">PWR ${c.power}</span>
+           onclick="${locked?'':'Combat.selectCard('+i+')'}">
+        <span class="cname">${c.name}${alreadyUsed?' (ใช้แล้ว)':offElem?' (ธาตุไม่ตรง)':''}</span><span class="cpower">PWR ${c.power}</span>
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div class="elem-tag ${ELEM_CLASS[c.element]}">${ELEM_NAME[c.element]}</div>
           <span onclick="event.stopPropagation();CardInfo.show(Game.state.player.deck[${i}]);" style="font-size:14px;">ℹ️</span>
@@ -1655,6 +1665,7 @@ const Combat = {
   },
   selectCard(i){
     const c = Game.state.player.deck[i];
+    if(c && c.element !== playerElement(Game.state.player)){ Toast.show(`⛔ ใช้ได้เฉพาะการ์ดธาตุ ${ELEM_NAME[playerElement(Game.state.player)]} เท่านั้น`); return; }
     if(c && c.effects && c.effects.some(e=>e.type==='once_per_fight') && c.skillId && this.active.usedOnce[c.skillId]) return;
     this.active.selectedCard = i; this.render();
   },
@@ -2047,19 +2058,25 @@ const Combat = {
     document.getElementById('pvp-opp-hpbar').style.width = pct(pv.oppHp, pv.oppMax)+'%';
     document.getElementById('pvp-opp-hplabel').textContent = `${Math.max(0,pv.oppHp)}/${pv.oppMax}`;
     const activeCount = Math.min(3, p.deck.length);
-    document.getElementById('pvp-hand').innerHTML = '<div class="hand-grid">' + p.deck.slice(0,activeCount).map((c,i)=>`
-      <div class="card ${pv.mySelIndex===i?'selected':''} ${pv.mySel?'disabled':''}" onclick="Combat.selectPvpCard(${i})">
-        <span class="cname">${c.name}</span><span class="cpower">PWR ${c.power}</span>
+    const myElemPvp = playerElement(p);
+    document.getElementById('pvp-hand').innerHTML = '<div class="hand-grid">' + p.deck.slice(0,activeCount).map((c,i)=>{
+      const offElem = c.element !== myElemPvp;
+      return `
+      <div class="card ${pv.mySelIndex===i?'selected':''} ${(pv.mySel||offElem)?'disabled':''}" title="${offElem?'ธาตุไม่ตรงกับตัวละคร ใช้ไม่ได้':''}" onclick="${offElem?'':'Combat.selectPvpCard('+i+')'}">
+        <span class="cname">${c.name}${offElem?' (ธาตุไม่ตรง)':''}</span><span class="cpower">PWR ${c.power}</span>
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div class="elem-tag ${ELEM_CLASS[c.element]}">${ELEM_NAME[c.element]}</div>
           <span onclick="event.stopPropagation();CardInfo.show(Game.state.player.deck[${i}]);" style="font-size:14px;">ℹ️</span>
-        </div></div>`).join('') + '</div>' + (pv.mySel ? '' : renderCardBagHtml(p.deck, activeCount, 'Combat.renderPvp'));
+        </div></div>`;
+    }).join('') + '</div>' + (pv.mySel ? '' : renderCardBagHtml(p.deck, activeCount, 'Combat.renderPvp'));
     document.getElementById('pvp-log').innerHTML = pv.log.slice(0,30).map(l=>`<div class="${l.cls}">${l.msg}</div>`).join('');
     document.getElementById('pvp-status').textContent = pv.mySel ? '⏳ รอคู่ต่อสู้ล็อกการ์ด...' : `🎯 โอกาสสำเร็จของคุณ: ${lukSuccessChance(p.luk).toFixed(1)}% — เลือกการ์ดแล้วกดล็อก`;
     document.getElementById('btn-pvp-lock').disabled = pv.mySelIndex===undefined || pv.mySelIndex===null || !!pv.mySel;
   },
   selectPvpCard(i){
     if(!this.pvp || this.pvp.mySel) return;
+    const c = Game.state.player.deck[i];
+    if(c && c.element !== playerElement(Game.state.player)){ Toast.show(`⛔ ใช้ได้เฉพาะการ์ดธาตุ ${ELEM_NAME[playerElement(Game.state.player)]} เท่านั้น`); return; }
     this.pvp.mySelIndex = i;
     this.renderPvp();
   },
@@ -2202,8 +2219,9 @@ const CoopCombat = {
     const st = this.active; if(!st || st.locked) return;
     const cur = st.members[st.turnIndex];
     if(!cur || cur.id!==Net.peerId) return;
-    st.selectedCard = i;
     const card = Game.state.player.deck[i];
+    if(card && card.element !== playerElement(Game.state.player)){ Toast.show(`⛔ ใช้ได้เฉพาะการ์ดธาตุ ${ELEM_NAME[playerElement(Game.state.player)]} เท่านั้น`); return; }
+    st.selectedCard = i;
     st.preview[Net.peerId] = card.name;
     const msg = {type:'coop_preview', turnId:st.turnId, actorId:Net.peerId, cardName:card.name};
     if(Net.isHost) Net.broadcast(msg); else Net.sendTo(Net.hostId, msg);
@@ -2372,13 +2390,17 @@ const CoopCombat = {
       const p = Game.state.player;
       const hasPotion = p.inventory.some(it=>it && ITEM_TEMPLATES[it.tplId] && ITEM_TEMPLATES[it.tplId].type==='consumable');
       const activeCount = Math.min(3, p.deck.length);
-      handArea.innerHTML = `<div id="coop-hand" class="hand-grid">${p.deck.slice(0,activeCount).map((c,i)=>`
-        <div class="card ${st.selectedCard===i?'selected':''}" onclick="CoopCombat.selectCard(${i})">
-          <span class="cname">${c.name}</span><span class="cpower">PWR ${c.power}</span>
+      const myElemCoop = playerElement(p);
+      handArea.innerHTML = `<div id="coop-hand" class="hand-grid">${p.deck.slice(0,activeCount).map((c,i)=>{
+        const offElem = c.element !== myElemCoop;
+        return `
+        <div class="card ${st.selectedCard===i?'selected':''} ${offElem?'disabled':''}" title="${offElem?'ธาตุไม่ตรงกับตัวละคร ใช้ไม่ได้':''}" onclick="${offElem?'':'CoopCombat.selectCard('+i+')'}">
+          <span class="cname">${c.name}${offElem?' (ธาตุไม่ตรง)':''}</span><span class="cpower">PWR ${c.power}</span>
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div class="elem-tag ${ELEM_CLASS[c.element]}">${ELEM_NAME[c.element]}</div>
             <span onclick="event.stopPropagation();CardInfo.show(Game.state.player.deck[${i}]);" style="font-size:14px;">ℹ️</span>
-          </div></div>`).join('')}</div>
+          </div></div>`;
+      }).join('')}</div>
         ${renderCardBagHtml(p.deck, activeCount, 'CoopCombat.render')}
         <div class="btn-row">
           <button class="btn" id="coop-btn-heal-action" onclick="CoopCombat.openHealMenu()" ${hasPotion?'':'disabled'}>🎒 ใช้ยาฟื้นฟู HP</button>
