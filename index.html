@@ -2015,6 +2015,7 @@ const Combat = {
     const busy = !!(this.active && this.active._weaponBusy);
     const disabled = busy || usesLeft<=0;
     el.innerHTML = `<button class="weapon-slot-btn ${wc.tier==='godly'?'godly godly-'+wc.element:''}" style="border-color:var(--${wc.element});flex-direction:column;align-items:flex-start;gap:2px;"
+      title="${wc.desc}" ${disabled?'disabled':''} onclick="Combat.useWeaponSkill()">
       <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
         <span>${wc.ic} ${wc.name}</span>
         <span class="elem-tag ${ELEM_CLASS[wc.element]}" style="margin-left:6px;">${ELEM_NAME[wc.element]}</span>
