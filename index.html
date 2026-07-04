@@ -327,6 +327,7 @@ textarea{width:100%;min-height:70px;background:var(--bg-panel);border:1px solid 
       <div class="center small-text" id="pvp-status">เลือกการ์ดของคุณ</div>
       <div class="log" id="pvp-log"></div>
       <div class="divider"></div>
+      <div id="pvp-weapon-slot"></div>
       <div id="pvp-hand"></div>
       <button class="btn primary" id="btn-pvp-lock" onclick="Combat.lockPvpCard()" disabled>🔒 ล็อกการ์ด</button>
     </div>
@@ -341,7 +342,7 @@ textarea{width:100%;min-height:70px;background:var(--bg-panel);border:1px solid 
         <div id="merchant-buy-list"></div>
       </div>
       <div class="panel">
-        <div class="eyebrow">ขายสินค้า (ราคาคงที่ชิ้นละ 10🪙 — ยกเว้นยาฟื้นฟูเล็กที่ขายคืนร้านไม่ได้)</div>
+        <div class="eyebrow">ขายสินค้า (ราคาคงที่ชิ้นละ 10🪙 — ยกเว้นยาฟื้นฟูเล็กและยาฟื้นฟูกลางที่ขายคืนร้านไม่ได้)</div>
         <div id="merchant-sell-list"></div>
       </div>
     </div>
@@ -635,10 +636,10 @@ const ITEM_TEMPLATES = {
   charm_power:{name:'สร้อยพลังเถื่อน',ic:'💪',type:'equip',statBoost:{atk:8},desc:'เพิ่ม ATK +8'},
 
   /* ---- 14 ไอเทมใหม่ (เพิ่มโดยไม่แตะระบบ DEF/SPD/EVA/HIT/CRIT/สถานะผิดปกติที่เกมไม่มี) ---- */
-  potion_medium:{name:'ยาฟื้นฟูกลาง',ic:'🧴',type:'consumable',heal:'half',buyPrice:5,desc:'ฟื้นฟู HP ทันที 50% ของ HP สูงสุด'},
+  potion_medium:{name:'ยาฟื้นฟูกลาง',ic:'🧴',type:'consumable',heal:'half',buyPrice:5,sellDisabled:true,desc:'ฟื้นฟู HP ทันที 50% ของ HP สูงสุด'},
   clover_luck:{name:'ใบโคลเวอร์สี่แฉก',ic:'🍁',type:'consumable',effect:'fightbuff_luk_random',minAmount:3,maxAmount:12,buyPrice:25,desc:'สุ่มเพิ่ม LUK +3 ถึง +12 ตลอดการต่อสู้ครั้งถัดไป (ไม่ถาวร)'},
   potion_fortune:{name:'น้ำยาเสี่ยงโชค',ic:'🌈',type:'consumable',effect:'perm_stat_random',amount:3,buyPrice:20,desc:'สุ่มเพิ่มสเตตัสถาวร 1 อย่าง (ATK/MAG/LUK +3 หรือ HP สูงสุด +6)'},
-  coin_gamble:{name:'เหรียญเสี่ยงดวง',ic:'🪙',type:'consumable',effect:'gamble_hp',buyPrice:8,desc:'วัดดวง 50/50 — ฟื้น HP 40% ของ HP สูงสุด หรือเสีย HP 15% (ไม่มีทางตายจากเหรียญนี้)'},
+  coin_gamble:{name:'เหรียญเสี่ยงดวง',ic:'🪙',type:'consumable',effect:'gamble_hp',buyPrice:10,desc:'วัดดวง 50/50 — ฟื้น HP 40% ของ HP สูงสุด หรือเสีย HP 15% (ไม่มีทางตายจากเหรียญนี้)'},
   charm_dropboost:{name:'เหรียญนำโชค',ic:'🧿',type:'consumable',effect:'dropboost',buyPrice:12,desc:'เพิ่มโอกาสดรอปไอเทมในการต่อสู้ที่ชนะครั้งถัดไป'},
   potion_goldboost:{name:'ยาเพิ่มลาภ',ic:'💰',type:'consumable',effect:'goldboost',buyPrice:15,desc:'ทองคำที่ได้รับจากการต่อสู้ที่ชนะครั้งถัดไปเพิ่มเป็น 5 เท่า'},
   crystal_shield:{name:'ผลึกป้องกัน',ic:'🔷',type:'consumable',effect:'shield_next',buyPrice:15,desc:'ป้องกันความเสียหายจากการโจมตีสวนกลับครั้งถัดไปทั้งหมด (0 ดาเมจ)'},
@@ -646,7 +647,7 @@ const ITEM_TEMPLATES = {
   potion_temp_atk:{name:'ยาเพิ่มพลังโจมตี',ic:'🥊',type:'consumable',effect:'fightbuff_atk',amount:6,buyPrice:10,desc:'เพิ่ม ATK +6 ตลอดการต่อสู้ครั้งถัดไป'},
   potion_temp_luck:{name:'ยาเพิ่มโชคชั่วคราว',ic:'🎋',type:'consumable',effect:'fightbuff_luk',amount:10,buyPrice:10,desc:'เพิ่ม LUK +10 ตลอดการต่อสู้ครั้งถัดไป'},
   dice_luck:{name:'ลูกเต๋าโชค',ic:'🎲',type:'consumable',effect:'dice_roll',buyPrice:10,desc:'ทอยลูกเต๋า 1-6 แต้มยิ่งสูง ยิ่งได้ HP และทองคำมาก'},
-  card_fate:{name:'ไพ่โชคชะตา',ic:'🃏',type:'consumable',effect:'fate_card',buyPrice:8,desc:'สุ่มดวง 50/50 — อาจได้รับทองก้อนโต หรือเสียทองบางส่วน'},
+  card_fate:{name:'ไพ่โชคชะตา',ic:'🃏',type:'consumable',effect:'fate_card',buyPrice:10,desc:'สุ่มดวง 50/50 — อาจได้รับทองก้อนโต หรือเสียทองบางส่วน'},
   amulet_guard_once:{name:'เครื่องรางกันตาย',ic:'🔰',type:'ward',buyPrice:20,desc:'พกติดตัวไว้: ครั้งต่อไปที่ HP จะเหลือ 0 จะรอดด้วย HP 1 แทนโดยอัตโนมัติ (ใช้แล้วหมดไป 1 ชิ้น)'},
   potion_revive:{name:'ยาชุบชีวิต',ic:'⚗️',type:'ward',buyPrice:45,desc:'พกติดตัวไว้ในหอคอยปีศาจ: ถ้า HP จะเหลือ 0 จะฟื้นคืนด้วย HP 30% ของสูงสุดแทนการปราชัยโดยอัตโนมัติ (ใช้แล้วหมดไป 1 ชิ้น)'},
 };
@@ -712,6 +713,104 @@ const GODLY_WEAPONS = [
     ultimate:{ name:'Time Collapse', power:22, desc:'บิดเบือนเวลา — ทุกๆ 2 ครั้งที่การ์ดนี้โจมตีติด จะฟื้นฟู HP ทันที 25% ของ HP สูงสุด', effect:'heal_every_2' } },
 ];
 function getGodlyWeapon(id){ return GODLY_WEAPONS.find(w=>w.id===id); }
+
+/* ---------------------------------- 1d. COMMON / RARE / EPIC WEAPONS (54) ---------------------------------- */
+// Plain equippable weapons with NO ultimate card / no special move — just a passive stat
+// boost whose size scales with rarity tier (Common < Rare < Epic). These sit in the same
+// single weaponSlot as the Godly weapons above; getWeaponData() below is the tier-aware
+// lookup used everywhere instead of calling getGodlyWeapon() directly.
+const TIER_WEAPON_NAMES = {
+  common: {
+    water:['สามง่ามกระแสน้ำ','เขี้ยวน้ำแข็ง','คทาฟองสมุทร'],
+    fire:['ดาบเปลวเพลิง','สนับมือเพลิง','หอกเพลิงลุกไหม้'],
+    wood:['แส้เถาวัลย์','ดาบหนามพิษ','ค้อนรากไม้'],
+    light:['ดาบแสงรุ่งอรุณ','คทารัศมี','ธนูประกายฟ้า'],
+    dark:['มีดเงารัตติกาล','ลูกแก้วอสูร','ดาบเงามืด'],
+    physical:['ดาบเหล็กยักษ์','ขวานเหล็กกล้า','หน้าไม้พราน'],
+  },
+  rare: {
+    water:['หอกอสูรวารี','คมดาบธาราเยือกแข็ง','คทาคลื่นสมุทร'],
+    fire:['ดาบนรกเพลิง','กรงเล็บฟีนิกซ์','ค้อนลาวาเดือด'],
+    wood:['เคียวรากโลกา','เขี้ยวมรกต','ธนูพายุหนาม'],
+    light:['หอกรัศมีศักดิ์สิทธิ์','ดาบสวรรค์เรืองแสง','คทาปริซึม'],
+    dark:['เคียวเหวลึก','ดาบฝันร้าย','ลูกแก้วสุริยคราส'],
+    physical:['ค้อนไททัน','หอกเขี้ยวมังกร','ขวานเพชฌฆาต'],
+  },
+  epic: {
+    water:['พิโรธแห่งสมุทร','ดาบศูนย์องศาสัมบูรณ์','สามง่ามจักรพรรดิวารี'],
+    fire:['ดาบเพลิงมังกร','ง้าวสุริยเพลิง','ปืนใหญ่นรกเพลิง'],
+    wood:['คำพิพากษาแห่งไกอา','ธนูราชันพฤกษา','ค้อนยักษ์อันเชียนท์'],
+    light:['ดาบรุ่งอรุณศักดิ์สิทธิ์','หอกเซราฟิม','ปืนใหญ่แสงศักดิ์สิทธิ์'],
+    dark:['เคียวผู้เก็บเกี่ยวสุญญะ','ดาบลบล้าง','คทาหลุมดำ'],
+    physical:['ค้อนทำลายมหึมา','ดาบ Ragnarok','ปืนใหญ่สงคราม'],
+  },
+};
+// Power/statBoost scaling per tier. mainStat goes to ATK for physical weapons and MAG for
+// every elemental weapon (fire/wood/water/light/dark), matching how the combat formula
+// already reads (`card.element==='physical' ? atk : mag`, with light/dark taking whichever
+// of atk/mag is higher) — so an elemental weapon's MAG boost is never wasted.
+const WEAPON_TIER_STATS = {
+  common:{ statPts:6,  luk:2, hp:4,  power:8  },
+  rare:  { statPts:11, luk:4, hp:10, power:16 },
+  epic:  { statPts:17, luk:6, hp:18, power:26 },
+};
+function inferWeaponIcon(name){
+  if(name.includes('ธนู')||name.includes('หน้าไม้')) return '🏹';
+  if(name.includes('คทา')) return '🪄';
+  if(name.includes('ลูกแก้ว')) return '🔮';
+  if(name.includes('สามง่าม')||name.includes('หอก')||name.includes('ง้าว')) return '🔱';
+  if(name.includes('ขวาน')) return '🪓';
+  if(name.includes('ค้อน')) return '🔨';
+  if(name.includes('เคียว')) return '⚚';
+  if(name.includes('แส้')) return '🪢';
+  if(name.includes('มีด')) return '🗡️';
+  if(name.includes('เขี้ยว')) return '🦷';
+  if(name.includes('สนับมือ')||name.includes('กรงเล็บ')) return '🥊';
+  if(name.includes('ปืนใหญ่')) return '💣';
+  if(name.includes('คำพิพากษา')) return '⚖️';
+  return '⚔️';
+}
+const TIER_WEAPONS = {common:[],rare:[],epic:[]};
+['common','rare','epic'].forEach(tier=>{
+  const stats = WEAPON_TIER_STATS[tier];
+  Object.entries(TIER_WEAPON_NAMES[tier]).forEach(([elem,names])=>{
+    names.forEach((name,idx)=>{
+      const mainStat = elem==='physical' ? 'atk' : 'mag';
+      const statBoost = {luk:stats.luk, hp:stats.hp};
+      statBoost[mainStat] = stats.statPts;
+      TIER_WEAPONS[tier].push({
+        id:`${tier}_${elem}_${idx+1}`, name, ic:inferWeaponIcon(name), element:elem, tier,
+        statBoost, power:stats.power,
+        desc:`อาวุธระดับ ${WEAPON_TIERS[tier].label} สาย${ELEM_NAME[elem]} — เพิ่ม ${mainStat.toUpperCase()} +${stats.statPts}, LUK +${stats.luk}, HP สูงสุด +${stats.hp} (ไม่มีท่าไม้ตายพิเศษ — เพิ่มแค่ค่าพลังตามระดับความหายาก)`
+      });
+    });
+  });
+});
+// Tier-aware weapon lookup — use this everywhere instead of calling getGodlyWeapon() directly,
+// since a weaponSlot/inventory weapon item can now be common/rare/epic/godly.
+function getWeaponData(tier, id){
+  if(tier==='godly') return getGodlyWeapon(id);
+  const pool = TIER_WEAPONS[tier];
+  return pool ? pool.find(w=>w.id===id) : null;
+}
+// Builds a generic "weapon card" object out of whatever weapon is currently equipped in
+// p.weaponSlot, usable identically by Solo Combat, real-time PvP, and Co-op combat. Godly
+// weapons carry their unique ultimate name/power/effect and get 1 use per fight/match;
+// any other equipped weapon (common/rare/epic) attacks with its own element/power and gets
+// 3 uses per fight/match. Returns null if no weapon is equipped.
+function getEquippedWeaponCard(p){
+  p = p || Game.state.player;
+  if(!p || !p.weaponSlot) return null;
+  const tier = p.weaponSlot.tier;
+  const w = getWeaponData(tier, p.weaponSlot.weaponId);
+  if(!w) return null;
+  if(tier==='godly'){
+    return { tier, maxUses:1, name:w.ultimate.name, element:w.element, power:w.ultimate.power, ic:w.ic,
+      desc:w.ultimate.desc, weaponId:w.id, cardEffect:w.ultimate.effect, cardEffectData:w.ultimate };
+  }
+  return { tier, maxUses:3, name:w.name, element:w.element, power:w.power, ic:w.ic,
+    desc:`โจมตีธาตุ${ELEM_NAME[w.element]}ด้วยอาวุธที่สวมใส่อยู่ (ไม่มีท่าไม้ตายพิเศษ)` };
+}
 
 /* ============================================================
    SKILL_LIBRARY — คลังการ์ดสกิลมาตรฐานทั้ง 6 ธาตุ (120 ใบ)
@@ -1255,21 +1354,25 @@ function grantLoot(tplId, qty){
    Goes straight into the dedicated 1-slot weapon holder if it's empty; otherwise
    falls back into the regular 10-slot bag (as an unequipped weapon item) so nothing
    is ever silently lost unless both are full. */
-function grantWeapon(weaponId){
-  const p = Game.state.player, w = getGodlyWeapon(weaponId);
+function grantWeapon(weaponId, tier){
+  tier = tier || 'godly';
+  const p = Game.state.player, w = getWeaponData(tier, weaponId);
   if(!p || !w) return false;
-  const item = {isWeapon:true, weaponId, tier:'godly'};
-  const label = `${w.name} (${w.nameEn})`;
+  const item = {isWeapon:true, weaponId, tier};
+  const isGodly = tier==='godly';
+  const label = isGodly ? `${w.name} (${w.nameEn})` : w.name;
+  const tierLabel = (WEAPON_TIERS[tier]||{}).label || tier;
+  const gainTag = isGodly ? '⚔️ ได้รับอาวุธระดับเทพ!' : `⚔️ ได้รับอาวุธ ${tierLabel}!`;
   if(!p.weaponSlot){
     p.weaponSlot = item;
     if(w.statBoost) Object.keys(w.statBoost).forEach(k=>{ if(k==='hp'){ p.maxHp+=w.statBoost.hp; p.hp+=w.statBoost.hp; } else p[k]+=w.statBoost[k]; });
-    Inventory.addUltimateCard(w);
-    LootPopup.push({ic:w.ic, tag:'⚔️ ได้รับอาวุธระดับเทพ!', name:label, msg:'สวมใส่เข้าช่องอาวุธทันที พร้อมปลดล็อกการ์ดท่าพิเศษ!'});
+    if(isGodly) Inventory.addUltimateCard(w);
+    LootPopup.push({ic:w.ic, tag:gainTag, name:label, msg: isGodly ? 'สวมใส่เข้าช่องอาวุธทันที พร้อมปลดล็อกการ์ดท่าพิเศษ!' : `สวมใส่เข้าช่องอาวุธทันที! (PWR ${w.power})`});
   } else if(p.inventory.length < 10){
     p.inventory.push(item);
-    LootPopup.push({ic:w.ic, tag:'⚔️ ได้รับอาวุธระดับเทพ!', name:label, msg:'ช่องอาวุธเต็มอยู่ — เก็บเข้ากระเป๋าแล้ว (ไปที่กระเป๋าเพื่อสวมใส่แทนอาวุธเดิม)'});
+    LootPopup.push({ic:w.ic, tag:gainTag, name:label, msg:'ช่องอาวุธเต็มอยู่ — เก็บเข้ากระเป๋าแล้ว (ไปที่กระเป๋าเพื่อสวมใส่แทนอาวุธเดิม)'});
   } else {
-    LootPopup.push({ic:w.ic, tag:'⚠️ กระเป๋าเต็ม!', name:label, msg:'ช่องอาวุธและกระเป๋าเต็มทั้งคู่ — อาวุธระดับเทพชิ้นนี้สูญหาย!'});
+    LootPopup.push({ic:w.ic, tag:'⚠️ กระเป๋าเต็ม!', name:label, msg:'ช่องอาวุธและกระเป๋าเต็มทั้งคู่ — อาวุธชิ้นนี้สูญหาย!'});
     Game.save();
     return false;
   }
@@ -1391,7 +1494,7 @@ const Render = {
     for(let i=0;i<10;i++){
       const it = p.inventory[i]; const div = document.createElement('div'); div.className = 'slot'+(it?'':' empty');
       if(it){
-        const tpl = it.isWeapon ? (getGodlyWeapon(it.weaponId)||{name:'อาวุธ',ic:'⚔️'}) : (it.cardData ? {name:it.cardData.name, ic:'🃏'} : ITEM_TEMPLATES[it.tplId]);
+        const tpl = it.isWeapon ? (getWeaponData(it.tier, it.weaponId)||{name:'อาวุธ',ic:'⚔️'}) : (it.cardData ? {name:it.cardData.name, ic:'🃏'} : ITEM_TEMPLATES[it.tplId]);
         div.innerHTML = `<div class="ic">${tpl.ic}</div><div>${tpl.name}</div>${(it.qty>1)?`<div class="qty">x${it.qty}</div>`:''}`;
         div.onclick = ()=>Inventory.openDetail(i);
       } else div.innerHTML = `<div class="ic">➕</div>`;
@@ -1399,7 +1502,7 @@ const Render = {
     }
     const wb = document.getElementById('weapon-slot-box');
     if(p.weaponSlot){
-      const w = getGodlyWeapon(p.weaponSlot.weaponId);
+      const w = getWeaponData(p.weaponSlot.tier, p.weaponSlot.weaponId);
       const tierInfo = WEAPON_TIERS[p.weaponSlot.tier]||WEAPON_TIERS.godly;
       wb.innerHTML = `<div class="weapon-slot" onclick="Inventory.openWeaponSlotDetail()">
         <div class="wic">${w?w.ic:'⚔️'}</div><div><div class="wtitle">${w?w.name:'อาวุธ'}</div>
@@ -1524,8 +1627,14 @@ const Merchant = {
     const p = Game.state.player;
     const rows = [];
     p.inventory.forEach((it,i)=>{
+      if(it.isWeapon){
+        const w = getWeaponData(it.tier, it.weaponId) || {name:'อาวุธ', ic:'⚔️'};
+        rows.push(`<div class="shoprow"><span onclick="Inventory.openWeaponDetail(${i})" style="cursor:pointer;text-decoration:underline dotted;">${w.ic||'⚔️'} ${w.name} ℹ️</span>
+          <button class="btn small" onclick="Merchant.sellWeapon(${i})">ขาย <span class="coin">10🪙</span></button></div>`);
+        return;
+      }
       const tpl = it.cardData ? {name:it.cardData.name, ic:'🃏'} : ITEM_TEMPLATES[it.tplId];
-      if(it.tplId === 'potion_small'){
+      if(it.tplId === 'potion_small' || it.tplId === 'potion_medium'){
         rows.push(`<div class="shoprow"><span>${tpl.ic} ${tpl.name}</span>
           <span class="small-text" style="color:var(--text-dim);">ขายคืนไม่ได้</span></div>`);
         return;
@@ -1543,11 +1652,17 @@ const Merchant = {
       rows.push(`<div class="shoprow"><span>${eq.ic||'✨'} ${eq.name} (สวมใส่อยู่)</span>
         <button class="btn small" onclick="Merchant.sellEquipped(${i})">ขาย <span class="coin">10🪙</span></button></div>`);
     });
+    if(p.weaponSlot){
+      const w = getWeaponData(p.weaponSlot.tier, p.weaponSlot.weaponId) || {name:'อาวุธ', ic:'⚔️'};
+      rows.push(`<div class="shoprow"><span>${w.ic||'⚔️'} ${w.name} (สวมใส่อยู่)</span>
+        <button class="btn small" onclick="Merchant.sellEquippedWeapon()">ขาย <span class="coin">10🪙</span></button></div>`);
+    }
     document.getElementById('merchant-sell-list').innerHTML = rows.length ? rows.join('') : '<p class="small-text">ไม่มีสินค้าให้ขาย</p>';
   },
   sellItem(i){
     const p = Game.state.player, it = p.inventory[i]; if(!it) return;
     if(it.tplId === 'potion_small'){ Toast.show('⛔ ยาฟื้นฟูเล็กขายคืนร้านไม่ได้ (ป้องกันการปั๊มเงิน)'); return; }
+    if(it.tplId === 'potion_medium'){ Toast.show('⛔ ยาฟื้นฟูกลางขายคืนร้านไม่ได้ (ป้องกันการปั๊มเงิน)'); return; }
     const tpl = it.cardData ? {name:it.cardData.name} : ITEM_TEMPLATES[it.tplId];
     const sp = 10;
     it.qty--; if(it.qty<=0) p.inventory.splice(i,1);
@@ -1570,6 +1685,28 @@ const Merchant = {
     if(eq.statBoost) Object.keys(eq.statBoost).forEach(k=>{ if(k==='hp'){ p.maxHp-=eq.statBoost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=eq.statBoost[k]; });
     p.equipment[i]=null; p.gold += 10; Game.save();
     Toast.show(`🪙 ขาย "${eq.name}" ได้ 10🪙`);
+    this.renderSellList(); Render.hub();
+  },
+  // Sells an unequipped weapon sitting in the bag. No stat boosts to unwind here since
+  // stat boosts only apply while a weapon is in the active weaponSlot.
+  sellWeapon(i){
+    const p = Game.state.player, item = p.inventory[i]; if(!item || !item.isWeapon) return;
+    const w = getWeaponData(item.tier, item.weaponId);
+    p.inventory.splice(i,1); p.gold += 10; Game.save();
+    Toast.show(`🪙 ขาย "${w?w.name:'อาวุธ'}" ได้ 10🪙`);
+    this.renderSellList(); Render.hub();
+  },
+  // Sells the weapon currently equipped in the weapon slot — unwinds its stat boosts and,
+  // for godly weapons, removes the ultimate card from the deck before clearing the slot.
+  sellEquippedWeapon(){
+    const p = Game.state.player; if(!p.weaponSlot) return;
+    const w = getWeaponData(p.weaponSlot.tier, p.weaponSlot.weaponId);
+    if(w){
+      if(w.statBoost) Object.keys(w.statBoost).forEach(k=>{ if(k==='hp'){ p.maxHp-=w.statBoost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=w.statBoost[k]; });
+      if(p.weaponSlot.tier==='godly') Inventory.removeUltimateCard(w.id);
+    }
+    p.weaponSlot = null; p.gold += 10; Game.save();
+    Toast.show(`🪙 ขาย "${w?w.name:'อาวุธ'}" ได้ 10🪙`);
     this.renderSellList(); Render.hub();
   }
 };
@@ -1610,7 +1747,13 @@ const Combat = {
     const buffAtk = p._pendingBuffAtk || 0;
     const buffLuk = p._pendingBuffLuk || 0;
     p._pendingBuffAtk = 0; p._pendingBuffLuk = 0;
+    // Weapon-card uses for this fight only: Godly weapons get exactly 1 use per fight
+    // (resets fully next fight since this.active is rebuilt from scratch here),
+    // non-Godly equipped weapons get 3 uses per fight. No weapon equipped -> 0.
+    const equippedWc = getEquippedWeaponCard(p);
+    const weaponMaxUses = equippedWc ? equippedWc.maxUses : 0;
     this.active = { mode, floor, monster, guaranteedLootGiven:false, buffAtk, buffLuk, turnsElapsed:0, godHitCounts:{}, guaranteedSuccess:false,
+      weaponUsesLeft: weaponMaxUses, weaponMaxUses,
       // ---- SKILL_LIBRARY effect-engine state ----
       usedOnce:{},            // {skillId:true} การ์ด once_per_fight ที่ใช้ไปแล้วในไฟท์นี้
       playerBlock:0,          // ดาเมจที่จะถูกหักออกครั้งถัดไปที่โดนตี (block)
@@ -1660,14 +1803,15 @@ const Combat = {
     document.getElementById('combat-hand').innerHTML = '<div class="hand-grid">' + p.deck.slice(0,activeCount).map((c,i)=>{
       const isOncePerFight = c.effects && c.effects.some(e=>e.type==='once_per_fight');
       const alreadyUsed = isOncePerFight && c.skillId && this.active.usedOnce[c.skillId];
-      const offElem = c.element !== myElem;
-      const locked = alreadyUsed || offElem;
-      const effTip = (c.desc?c.desc:'') + (offElem ? ' (ธาตุไม่ตรงกับตัวละคร ใช้ไม่ได้)' : '');
+      const offElem = false; // ผู้เล่นใช้อาวุธธาตุใหนก็ได้ ไม่จำกัดตามธาตุตัวละคร
+      const locked = alreadyUsed || c.godTier;
+      const lockLabel = c.godTier ? ' (ใช้ผ่านช่องอาวุธ)' : (alreadyUsed ? ' (ใช้แล้ว)' : '');
+      const effTip = (c.desc?c.desc:'');
       return `
       <div class="card ${this.active.selectedCard===i?'selected':''} ${locked?'disabled':''}"
            title="${effTip}"
            onclick="${locked?'':'Combat.selectCard('+i+')'}">
-        <span class="cname">${c.name}${alreadyUsed?' (ใช้แล้ว)':offElem?' (ธาตุไม่ตรง)':''}</span><span class="cpower">PWR ${c.power}</span>
+        <span class="cname">${c.name}${lockLabel}</span><span class="cpower">PWR ${c.power}</span>
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div class="elem-tag ${ELEM_CLASS[c.element]}">${ELEM_NAME[c.element]}</div>
           <span onclick="event.stopPropagation();CardInfo.show(Game.state.player.deck[${i}]);" style="font-size:14px;">ℹ️</span>
@@ -1678,39 +1822,45 @@ const Combat = {
     document.getElementById('btn-heal-action').disabled = !hasPotion;
     this.renderWeaponSlot();
   },
-  // Small dedicated slot reserved for weapon skills — right now the only one that exists
-  // is a godly weapon's ultimate card (if equipped). Tapping it plays that skill directly
-  // in one tap instead of having to dig it out of the hand/bag. Empty and disabled if no
-  // weapon skill is unlocked yet, so the slot is just there waiting for future skills.
+  // Weapon slot — now doubles as an actual "weapon card" that can be tapped to attack.
+  // The attack always uses that weapon's own element + power (and, for Godly weapons,
+  // its unique ultimate effect). Godly weapons: 1 use per fight. Any other equipped
+  // weapon (common/rare/epic): 3 uses per fight. Uses reset fully at the start of the
+  // next fight (see beginFight). Empty/disabled if no weapon is equipped.
   renderWeaponSlot(){
     const el = document.getElementById('combat-weapon-slot'); if(!el) return;
-    const p = Game.state.player;
-    const ultCard = p.deck.find(c=>c.godTier);
-    if(!ultCard){
-      el.innerHTML = `<button class="weapon-slot-btn" disabled>🗡️ ช่องสกิลอาวุธ (ยังไม่ปลดล็อก)</button>`;
+    const wc = getEquippedWeaponCard();
+    if(!wc){
+      el.innerHTML = `<button class="weapon-slot-btn" disabled>🗡️ ไม่มีอาวุธติดตั้ง — ไปที่กระเป๋าเพื่อสวมใส่อาวุธ</button>`;
       return;
     }
-    const offElem = ultCard.element !== playerElement(p);
+    const maxUses = (this.active && this.active.weaponMaxUses!=null) ? this.active.weaponMaxUses : wc.maxUses;
+    const usesLeft = this.active ? (this.active.weaponUsesLeft||0) : maxUses;
     const busy = !!(this.active && this.active._weaponBusy);
-    el.innerHTML = `<button class="weapon-slot-btn" style="border-color:var(--${ultCard.element});" ${(offElem||busy)?'disabled':''} onclick="Combat.useWeaponSkill()">
-      🗡️ ${ultCard.name}${offElem?' (ธาตุไม่ตรง)':''}</button>`;
+    const disabled = busy || usesLeft<=0;
+    el.innerHTML = `<button class="weapon-slot-btn" style="border-color:var(--${wc.element});flex-direction:column;align-items:flex-start;gap:2px;"
+        title="${wc.desc}" ${disabled?'disabled':''} onclick="Combat.useWeaponSkill()">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+        <span>${wc.ic} ${wc.name}</span>
+        <span class="elem-tag ${ELEM_CLASS[wc.element]}" style="margin-left:6px;">${ELEM_NAME[wc.element]}</span>
+      </div>
+      <div class="small-text" style="width:100%;text-align:left;">${usesLeft<=0?'ใช้ครบแล้วในการต่อสู้นี้':`เหลือ ${usesLeft}/${maxUses} ครั้งในการต่อสู้นี้`}</div>
+    </button>`;
   },
-  // Fired by tapping the weapon slot: selects the ultimate card (wherever it sits in the
-  // deck, no need to swap it into the visible hand first) and plays it immediately, while
-  // tinting the whole combat screen in that element's color — like a transformation —
-  // until the fight ends.
+  // Fired by tapping the weapon-card slot: plays that weapon's attack immediately
+  // (godly = its unique ultimate card; otherwise a plain attack using the weapon's
+  // own element/power), while tinting the whole combat screen in that element's
+  // color — like a transformation — until the fight ends. Consumes one use.
   useWeaponSkill(){
     if(!this.active || this.active._weaponBusy) return;
-    const p = Game.state.player;
-    const ultCard = p.deck.find(c=>c.godTier);
-    if(!ultCard){ Toast.show('ยังไม่มีสกิลอาวุธให้ใช้'); return; }
-    if(ultCard.element !== playerElement(p)){ Toast.show(`⛔ ใช้ได้เฉพาะการ์ดธาตุ ${ELEM_NAME[playerElement(p)]} เท่านั้น`); return; }
-    const idx = p.deck.indexOf(ultCard);
-    this.active.selectedCard = idx;
+    if((this.active.weaponUsesLeft||0) <= 0){ Toast.show('ใช้การ์ดอาวุธนี้ครบจำนวนครั้งแล้วในการต่อสู้นี้'); return; }
+    const wc = getEquippedWeaponCard();
+    if(!wc){ Toast.show('ยังไม่มีอาวุธติดตั้ง'); return; }
     this.active._weaponBusy = true;
-    this.activateElementTint(ultCard.element);
+    this.active.weaponUsesLeft--;
+    this.activateElementTint(wc.element);
     this.renderWeaponSlot();
-    this.confirmCard();
+    this.confirmCard(wc);
   },
   ELEMENT_KEYS: ['fire','wood','water','light','dark','physical'],
   activateElementTint(elem){
@@ -1726,7 +1876,7 @@ const Combat = {
   },
   selectCard(i){
     const c = Game.state.player.deck[i];
-    if(c && c.element !== playerElement(Game.state.player)){ Toast.show(`⛔ ใช้ได้เฉพาะการ์ดธาตุ ${ELEM_NAME[playerElement(Game.state.player)]} เท่านั้น`); return; }
+    if(c && c.godTier){ Toast.show('ใช้การ์ดอาวุธนี้ผ่าน "ช่องอาวุธ" ด้านบนแทน (มีจำกัดจำนวนครั้งต่อการต่อสู้)'); return; }
     if(c && c.effects && c.effects.some(e=>e.type==='once_per_fight') && c.skillId && this.active.usedOnce[c.skillId]) return;
     this.active.selectedCard = i; this.render();
   },
@@ -1872,9 +2022,9 @@ const Combat = {
     }
     return Math.max(0, finalDmg);
   },
-  confirmCard(){
+  confirmCard(cardOverride){
     const p = Game.state.player, m = this.active.monster;
-    const card = p.deck[this.active.selectedCard];
+    const card = cardOverride || p.deck[this.active.selectedCard];
     this.tickDotOnEnemy(m);
     const effAtk = p.atk + (this.active.buffAtk||0) + (this.active.playerAtkNextMod||0);
     const effLuk = p.luk + (this.active.buffLuk||0);
@@ -2094,11 +2244,13 @@ const Combat = {
   startRealPvp(peerId){
     const p = Game.state.player;
     const opp = Game.state.party[peerId] || {name:'คู่ต่อสู้'};
+    const wc = getEquippedWeaponCard(p);
     this.pvp = {
       opponentId:peerId,
       myHp:p.maxHp, myMax:p.maxHp,
       oppHp: opp.maxHp||p.maxHp, oppMax: opp.maxHp||p.maxHp,
-      mySel:null, oppSel:null, log:[], round:0
+      mySel:null, oppSel:null, log:[], round:0,
+      weaponUsesLeft: wc?wc.maxUses:0, weaponMaxUses: wc?wc.maxUses:0
     };
     Net.sendTo(peerId, {type:'pvp_invite', name:p.name, maxHp:p.maxHp});
     UI.goto('pvp-combat');
@@ -2107,7 +2259,9 @@ const Combat = {
   onPvpInvited(fromId, data){
     Toast.show(`⚔️ ${data.name||'ผู้เล่น'} ท้าดวล PvP! เข้าสู่สนามดวลอัตโนมัติ`);
     const p = Game.state.player;
-    this.pvp = { opponentId:fromId, myHp:p.maxHp, myMax:p.maxHp, oppHp:data.maxHp||p.maxHp, oppMax:data.maxHp||p.maxHp, mySel:null, oppSel:null, log:[], round:0 };
+    const wc = getEquippedWeaponCard(p);
+    this.pvp = { opponentId:fromId, myHp:p.maxHp, myMax:p.maxHp, oppHp:data.maxHp||p.maxHp, oppMax:data.maxHp||p.maxHp, mySel:null, oppSel:null, log:[], round:0,
+      weaponUsesLeft: wc?wc.maxUses:0, weaponMaxUses: wc?wc.maxUses:0 };
     Game.state.party[fromId] = Object.assign(Game.state.party[fromId]||{id:fromId}, {name:data.name, maxHp:data.maxHp});
     UI.goto('pvp-combat');
     this.renderPvp();
@@ -2125,10 +2279,11 @@ const Combat = {
     const activeCount = Math.min(3, p.deck.length);
     const myElemPvp = playerElement(p);
     document.getElementById('pvp-hand').innerHTML = '<div class="hand-grid">' + p.deck.slice(0,activeCount).map((c,i)=>{
-      const offElem = c.element !== myElemPvp;
+      const locked = pv.mySel || c.godTier;
+      const label = c.godTier ? `${c.name} (ใช้ผ่านช่องอาวุธ)` : c.name;
       return `
-      <div class="card ${pv.mySelIndex===i?'selected':''} ${(pv.mySel||offElem)?'disabled':''}" title="${offElem?'ธาตุไม่ตรงกับตัวละคร ใช้ไม่ได้':''}" onclick="${offElem?'':'Combat.selectPvpCard('+i+')'}">
-        <span class="cname">${c.name}${offElem?' (ธาตุไม่ตรง)':''}</span><span class="cpower">PWR ${c.power}</span>
+      <div class="card ${pv.mySelIndex===i?'selected':''} ${locked?'disabled':''}" title="" onclick="${locked?'':'Combat.selectPvpCard('+i+')'}">
+        <span class="cname">${label}</span><span class="cpower">PWR ${c.power}</span>
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div class="elem-tag ${ELEM_CLASS[c.element]}">${ELEM_NAME[c.element]}</div>
           <span onclick="event.stopPropagation();CardInfo.show(Game.state.player.deck[${i}]);" style="font-size:14px;">ℹ️</span>
@@ -2137,18 +2292,40 @@ const Combat = {
     document.getElementById('pvp-log').innerHTML = pv.log.slice(0,30).map(l=>`<div class="${l.cls}">${l.msg}</div>`).join('');
     document.getElementById('pvp-status').textContent = pv.mySel ? '⏳ รอคู่ต่อสู้ล็อกการ์ด...' : `🎯 โอกาสสำเร็จของคุณ: ${lukSuccessChance(p.luk).toFixed(1)}% — เลือกการ์ดแล้วกดล็อก`;
     document.getElementById('btn-pvp-lock').disabled = pv.mySelIndex===undefined || pv.mySelIndex===null || !!pv.mySel;
+    this.renderPvpWeaponSlot();
+  },
+  // Weapon-card slot for PvP duels — same rules as Solo Combat: Godly weapons get 1 use
+  // per duel, any other equipped weapon gets 3 uses per duel. Ultimate special effects
+  // (crit/lifesteal/execute/etc.) aren't replayed here — only base element/power — same
+  // simplification used in Co-op combat, since PvP resolution is a simple simultaneous
+  // dice-off rather than the single-player effect engine.
+  renderPvpWeaponSlot(){
+    const el = document.getElementById('pvp-weapon-slot'); if(!el) return;
+    const pv = this.pvp;
+    const wc = getEquippedWeaponCard();
+    if(!wc){ el.innerHTML = `<button class="weapon-slot-btn" disabled>🗡️ ไม่มีอาวุธติดตั้ง</button>`; return; }
+    const usesLeft = pv.weaponUsesLeft||0;
+    const disabled = !!pv.mySel || usesLeft<=0;
+    el.innerHTML = `<button class="weapon-slot-btn" style="border-color:var(--${wc.element});flex-direction:column;align-items:flex-start;gap:2px;"
+        title="${wc.desc}" ${disabled?'disabled':''} onclick="Combat.usePvpWeaponSkill()">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+        <span>${wc.ic} ${wc.name}</span>
+        <span class="elem-tag ${ELEM_CLASS[wc.element]}" style="margin-left:6px;">${ELEM_NAME[wc.element]}</span>
+      </div>
+      <div class="small-text" style="width:100%;text-align:left;">${usesLeft<=0?'ใช้ครบแล้วในการดวลนี้':`เหลือ ${usesLeft}/${pv.weaponMaxUses} ครั้งในการดวลนี้`}</div>
+    </button>`;
   },
   selectPvpCard(i){
     if(!this.pvp || this.pvp.mySel) return;
     const c = Game.state.player.deck[i];
-    if(c && c.element !== playerElement(Game.state.player)){ Toast.show(`⛔ ใช้ได้เฉพาะการ์ดธาตุ ${ELEM_NAME[playerElement(Game.state.player)]} เท่านั้น`); return; }
+    if(c && c.godTier){ Toast.show('ใช้การ์ดอาวุธนี้ผ่าน "ช่องอาวุธ" ด้านบนแทน'); return; }
     this.pvp.mySelIndex = i;
     this.renderPvp();
   },
-  lockPvpCard(){
-    const pv = this.pvp; if(!pv || pv.mySelIndex===undefined || pv.mySelIndex===null) return;
-    const p = Game.state.player;
-    const card = p.deck[pv.mySelIndex];
+  // Shared by both the normal hand card path and the weapon-card slot: builds the roll
+  // result locally, locks it in, and sends it to the opponent.
+  _lockPvpAction(card){
+    const pv = this.pvp, p = Game.state.player;
     const statVal = card.element==='physical' ? p.atk : (card.element==='light'||card.element==='dark' ? Math.max(p.atk,p.mag) : p.mag);
     const {roll, success} = rollSuccess(p.luk);
     const diceNumber = toD20(roll);
@@ -2157,6 +2334,20 @@ const Combat = {
     Net.sendTo(pv.opponentId, {type:'pvp_lock', action});
     this.renderPvp();
     if(pv.oppSel) this.resolvePvpRound();
+  },
+  lockPvpCard(){
+    const pv = this.pvp; if(!pv || pv.mySelIndex===undefined || pv.mySelIndex===null) return;
+    const p = Game.state.player;
+    const card = p.deck[pv.mySelIndex];
+    this._lockPvpAction(card);
+  },
+  usePvpWeaponSkill(){
+    const pv = this.pvp; if(!pv || pv.mySel) return;
+    if((pv.weaponUsesLeft||0) <= 0){ Toast.show('ใช้การ์ดอาวุธนี้ครบจำนวนครั้งแล้วในการดวลนี้'); return; }
+    const wc = getEquippedWeaponCard();
+    if(!wc){ Toast.show('ยังไม่มีอาวุธติดตั้ง'); return; }
+    pv.weaponUsesLeft--;
+    this._lockPvpAction({ name:wc.name, element:wc.element, power:wc.power });
   },
   onPvpOpponentLock(fromId, data){
     if(!this.pvp || this.pvp.opponentId!==fromId) return;
@@ -2255,11 +2446,13 @@ const CoopCombat = {
     const isBoss = floor % 10 === 0;
     const monster = genMonster(floor, 'demon', isBoss);
     const members = [{ id:Net.peerId, name:p.name, hp:p.hp, maxHp:p.maxHp, atk:p.atk, mag:p.mag, luk:p.luk,
-      deck:p.deck.map(c=>({name:c.name, element:c.element, power:c.power})), alive:p.hp>0 }];
+      deck:p.deck.map(c=>({name:c.name, element:c.element, power:c.power})), alive:p.hp>0,
+      weapon: getEquippedWeaponCard(p), weaponUsesLeft: (getEquippedWeaponCard(p)||{}).maxUses||0 }];
     online.forEach(([id,pl])=>{
       const hp = typeof pl.hp==='number' ? pl.hp : (pl.maxHp||30);
       members.push({ id, name:pl.name||'ผู้เล่น', hp, maxHp:pl.maxHp||30, atk:pl.atk||5, mag:pl.mag||5, luk:pl.luk||5,
-        deck: (pl.deck&&pl.deck.length) ? pl.deck : [{name:'โจมตีพื้นฐาน', element:'physical', power:8}], alive: hp>0 });
+        deck: (pl.deck&&pl.deck.length) ? pl.deck : [{name:'โจมตีพื้นฐาน', element:'physical', power:8}], alive: hp>0,
+        weapon: pl.weapon||null, weaponUsesLeft: (pl.weapon||{}).maxUses||0 });
     });
     if(members.length<2){ Combat.enterFloor('demon'); return; } // everyone left while we were waiting
     // light HP scaling so a bigger party still gets a real fight instead of a 2-hit monster
@@ -2288,7 +2481,6 @@ const CoopCombat = {
     const cur = st.members[st.turnIndex];
     if(!cur || cur.id!==Net.peerId) return;
     const card = Game.state.player.deck[i];
-    if(card && card.element !== playerElement(Game.state.player)){ Toast.show(`⛔ ใช้ได้เฉพาะการ์ดธาตุ ${ELEM_NAME[playerElement(Game.state.player)]} เท่านั้น`); return; }
     st.selectedCard = i;
     st.preview[Net.peerId] = card.name;
     const msg = {type:'coop_preview', turnId:st.turnId, actorId:Net.peerId, cardName:card.name};
@@ -2311,23 +2503,48 @@ const CoopCombat = {
     st.locked = true;
     const cardIndex = st.selectedCard;
     this.render();
-    if(Net.isHost) this.resolveTurn(Net.peerId, cardIndex, false);
+    if(Net.isHost) this.resolveTurn(Net.peerId, cardIndex, false, false);
     else Net.sendTo(Net.hostId, {type:'coop_action', turnId:st.turnId, actorId:Net.peerId, cardIndex});
+  },
+  // Weapon-card slot for co-op — same rules as Solo/PvP: Godly weapons get 1 use per fight,
+  // any other equipped weapon gets 3 uses per fight. Only base element/power is used (no
+  // ultimate special effects), matching the existing co-op simplification.
+  useWeaponSkill(){
+    const st = this.active; if(!st || st.locked) return;
+    const cur = st.members[st.turnIndex];
+    if(!cur || cur.id!==Net.peerId) return;
+    if(!cur.weapon){ Toast.show('ยังไม่มีอาวุธติดตั้ง'); return; }
+    if((cur.weaponUsesLeft||0) <= 0){ Toast.show('ใช้การ์ดอาวุธนี้ครบจำนวนครั้งแล้วในการต่อสู้นี้'); return; }
+    st.locked = true;
+    const previewName = `${cur.weapon.name} (อาวุธ)`;
+    st.preview[Net.peerId] = previewName;
+    const msg = {type:'coop_preview', turnId:st.turnId, actorId:Net.peerId, cardName:previewName};
+    if(Net.isHost) Net.broadcast(msg); else Net.sendTo(Net.hostId, msg);
+    this.render();
+    if(Net.isHost) this.resolveTurn(Net.peerId, -1, false, true);
+    else Net.sendTo(Net.hostId, {type:'coop_action', turnId:st.turnId, actorId:Net.peerId, cardIndex:-1, isWeapon:true});
   },
   hostResolveAction(fromId, data){
     const st = this.active; if(!st || data.turnId!==st.turnId) return;
     const cur = st.members[st.turnIndex];
     if(!cur || cur.id!==data.actorId || cur.id!==fromId) return; // ignore out-of-turn / stale messages
     this._autoResolvedTurnId = st.turnId; // a real action beat the clock, cancel the auto-timeout path
-    this.resolveTurn(data.actorId, data.cardIndex, false);
+    this.resolveTurn(data.actorId, data.cardIndex, false, !!data.isWeapon);
   },
 
   /* ---- Host-authoritative resolution of one full step: attack -> monster counter -> next turn ---- */
-  resolveTurn(actorId, cardIndex, isTimeout){
+  resolveTurn(actorId, cardIndex, isTimeout, isWeapon){
     const st = this.active; if(!st) return;
     const actor = st.members.find(m=>m.id===actorId); if(!actor) return;
-    const deck = (actor.deck&&actor.deck.length) ? actor.deck : [{name:'โจมตีพื้นฐาน',element:'physical',power:8}];
-    const card = deck[cardIndex] || deck[0];
+    let card, usedWeapon = false;
+    if(isWeapon && actor.weapon && (actor.weaponUsesLeft||0) > 0){
+      card = actor.weapon;
+      actor.weaponUsesLeft = (actor.weaponUsesLeft||0) - 1;
+      usedWeapon = true;
+    } else {
+      const deck = (actor.deck&&actor.deck.length) ? actor.deck : [{name:'โจมตีพื้นฐาน',element:'physical',power:8}];
+      card = deck[cardIndex] || deck[0];
+    }
     const statVal = card.element==='physical' ? actor.atk : (card.element==='light'||card.element==='dark' ? Math.max(actor.atk,actor.mag) : actor.mag);
     const {roll, chance, success} = rollSuccess(actor.luk);
     const diceNumber = toD20(roll), needed = d20Threshold(chance);
@@ -2335,7 +2552,7 @@ const CoopCombat = {
     const dmgToMonster = success ? Math.max(1, Math.round(card.power*(statVal/10)*emult)) : 0;
     st.monster.hp -= dmgToMonster;
     const lines = [{ cls: success?'hit':'dmg',
-      msg:`${isTimeout?'⏰ '+actor.name+' หมดเวลา — ระบบใช้ ':actor.name+' เล่น '}"${card.name}" — 🎲 ${diceNumber}/20 (ต้องการ ≤${needed}) ${success?`✅ สำเร็จ! ดาเมจ ${dmgToMonster}`:'❌ พลาดเป้า'}` }];
+      msg:`${isTimeout?'⏰ '+actor.name+' หมดเวลา — ระบบใช้ ':actor.name+' เล่น '}"${card.name}"${usedWeapon?' 🗡️':''} — 🎲 ${diceNumber}/20 (ต้องการ ≤${needed}) ${success?`✅ สำเร็จ! ดาเมจ ${dmgToMonster}`:'❌ พลาดเป้า'}` }];
     let counter = null;
     if(st.monster.hp>0){
       const alive = st.members.filter(m=>m.alive!==false && m.hp>0);
@@ -2366,7 +2583,7 @@ const CoopCombat = {
       }
     }
     const payload = { type:'coop_turn_result', turnId:st.turnId, actorId, monsterHp:st.monster.hp,
-      members: st.members.map(m=>({id:m.id, hp:m.hp, alive: m.alive!==false && m.hp>0})),
+      members: st.members.map(m=>({id:m.id, hp:m.hp, alive: m.alive!==false && m.hp>0, weaponUsesLeft:m.weaponUsesLeft})),
       log:lines, nextTurnIndex, nextTurnId: st.turnId+1, nextTurnStartTime: Date.now(), monsterDead, wipe };
     Net.broadcast(payload);
     this.onTurnResult(payload);
@@ -2383,7 +2600,7 @@ const CoopCombat = {
       const nextActor = st.members[nextTurnIndex];
       if(nextActor && nextActor.online===false && this._autoResolvedTurnId!==st.turnId){
         this._autoResolvedTurnId = st.turnId;
-        this.resolveTurn(nextActor.id, 0, true);
+        this.resolveTurn(nextActor.id, 0, true, false);
       }
     }
   },
@@ -2395,6 +2612,7 @@ const CoopCombat = {
     data.members.forEach(mu=>{
       const m = st.members.find(x=>x.id===mu.id); if(!m) return;
       m.hp = mu.hp; m.alive = mu.alive;
+      if(mu.weaponUsesLeft!==undefined) m.weaponUsesLeft = mu.weaponUsesLeft;
       if(mu.id===Net.peerId && Game.state.player){ Game.state.player.hp = Math.max(0, mu.hp); Game.save(); }
     });
     data.log.forEach(l=>this._log(l.cls, l.msg));
@@ -2483,11 +2701,20 @@ const CoopCombat = {
       const hasPotion = p.inventory.some(it=>it && ITEM_TEMPLATES[it.tplId] && ITEM_TEMPLATES[it.tplId].type==='consumable');
       const activeCount = Math.min(3, p.deck.length);
       const myElemCoop = playerElement(p);
-      handArea.innerHTML = `<div id="coop-hand" class="hand-grid">${p.deck.slice(0,activeCount).map((c,i)=>{
-        const offElem = c.element !== myElemCoop;
+      const wc = cur.weapon;
+      const weaponUsesLeft = cur.weaponUsesLeft||0;
+      const weaponHtml = wc ? `<button class="weapon-slot-btn" style="border-color:var(--${wc.element});flex-direction:column;align-items:flex-start;gap:2px;"
+          title="${wc.desc}" ${weaponUsesLeft<=0?'disabled':''} onclick="CoopCombat.useWeaponSkill()">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+          <span>${wc.ic} ${wc.name}</span>
+          <span class="elem-tag ${ELEM_CLASS[wc.element]}" style="margin-left:6px;">${ELEM_NAME[wc.element]}</span>
+        </div>
+        <div class="small-text" style="width:100%;text-align:left;">${weaponUsesLeft<=0?'ใช้ครบแล้วในการต่อสู้นี้':`เหลือ ${weaponUsesLeft}/${wc.maxUses} ครั้งในการต่อสู้นี้`}</div>
+      </button>` : `<button class="weapon-slot-btn" disabled>🗡️ ไม่มีอาวุธติดตั้ง</button>`;
+      handArea.innerHTML = `${weaponHtml}<div id="coop-hand" class="hand-grid">${p.deck.slice(0,activeCount).map((c,i)=>{
         return `
-        <div class="card ${st.selectedCard===i?'selected':''} ${offElem?'disabled':''}" title="${offElem?'ธาตุไม่ตรงกับตัวละคร ใช้ไม่ได้':''}" onclick="${offElem?'':'CoopCombat.selectCard('+i+')'}">
-          <span class="cname">${c.name}${offElem?' (ธาตุไม่ตรง)':''}</span><span class="cpower">PWR ${c.power}</span>
+        <div class="card ${st.selectedCard===i?'selected':''}" title="" onclick="CoopCombat.selectCard(${i})">
+          <span class="cname">${c.name}</span><span class="cpower">PWR ${c.power}</span>
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div class="elem-tag ${ELEM_CLASS[c.element]}">${ELEM_NAME[c.element]}</div>
             <span onclick="event.stopPropagation();CardInfo.show(Game.state.player.deck[${i}]);" style="font-size:14px;">ℹ️</span>
@@ -2672,19 +2899,19 @@ const Inventory = {
   },
   drop(i){ Game.state.player.inventory.splice(i,1); Game.save(); UI.goto('inventory-screen'); },
 
-  /* ---- Godly weapon slot management ---- */
+  /* ---- Weapon slot management (Common/Rare/Epic/Godly — tier-aware via getWeaponData) ---- */
   openWeaponDetail(i){
     const p = Game.state.player, item = p.inventory[i]; if(!item || !item.isWeapon) return;
-    const w = getGodlyWeapon(item.weaponId); if(!w) return;
+    const w = getWeaponData(item.tier, item.weaponId); if(!w) return;
     const tierInfo = WEAPON_TIERS[item.tier]||WEAPON_TIERS.godly;
+    const isGodly = item.tier==='godly';
     document.getElementById('weapon-detail-body').innerHTML = `
       <div class="panel center"><div style="font-size:44px;">${w.ic}</div>
         <span class="badge ${tierInfo.cls}">${tierInfo.label}</span>
-        <h3>${w.name}</h3><p class="small-text">${w.nameEn} · ${w.weaponType}</p>
+        <h3>${w.name}</h3><p class="small-text">${isGodly ? (w.nameEn+' · '+w.weaponType) : ('PWR '+w.power)}</p>
         <div class="elem-tag ${ELEM_CLASS[w.element]}" style="display:inline-block;margin:6px 0;">${ELEM_NAME[w.element]}</div>
-        <p class="small-text">${w.passiveDesc}</p>
-        <div class="divider"></div>
-        <p class="small-text"><b>ท่าไม้ตาย:</b> ${w.ultimate.name}<br>${w.ultimate.desc}</p>
+        <p class="small-text">${isGodly ? w.passiveDesc : w.desc}</p>
+        ${isGodly ? `<div class="divider"></div><p class="small-text"><b>ท่าไม้ตาย:</b> ${w.ultimate.name}<br>${w.ultimate.desc}</p>` : ''}
         <button class="btn primary" onclick="Inventory.equipWeapon(${i})">⚔️ สวมใส่อาวุธนี้</button>
         <button class="btn" onclick="Inventory.drop(${i})">🗑️ ทิ้ง</button>
       </div>`;
@@ -2692,36 +2919,36 @@ const Inventory = {
   },
   openWeaponSlotDetail(){
     const p = Game.state.player; if(!p.weaponSlot) return;
-    const w = getGodlyWeapon(p.weaponSlot.weaponId); if(!w) return;
+    const w = getWeaponData(p.weaponSlot.tier, p.weaponSlot.weaponId); if(!w) return;
     const tierInfo = WEAPON_TIERS[p.weaponSlot.tier]||WEAPON_TIERS.godly;
+    const isGodly = p.weaponSlot.tier==='godly';
     document.getElementById('weapon-detail-body').innerHTML = `
       <div class="panel center"><div style="font-size:44px;">${w.ic}</div>
         <span class="badge ${tierInfo.cls}">${tierInfo.label}</span>
-        <h3>${w.name} <span class="small-text">(สวมใส่อยู่)</span></h3><p class="small-text">${w.nameEn} · ${w.weaponType}</p>
+        <h3>${w.name} <span class="small-text">(สวมใส่อยู่)</span></h3><p class="small-text">${isGodly ? (w.nameEn+' · '+w.weaponType) : ('PWR '+w.power)}</p>
         <div class="elem-tag ${ELEM_CLASS[w.element]}" style="display:inline-block;margin:6px 0;">${ELEM_NAME[w.element]}</div>
-        <p class="small-text">${w.passiveDesc}</p>
-        <div class="divider"></div>
-        <p class="small-text"><b>ท่าไม้ตาย (อยู่ในสำรับแล้ว):</b> ${w.ultimate.name}<br>${w.ultimate.desc}</p>
+        <p class="small-text">${isGodly ? w.passiveDesc : w.desc}</p>
+        ${isGodly ? `<div class="divider"></div><p class="small-text"><b>ท่าไม้ตาย (อยู่ในสำรับแล้ว):</b> ${w.ultimate.name}<br>${w.ultimate.desc}</p>` : ''}
         <button class="btn" onclick="Inventory.unequipWeapon()">📦 ถอดเก็บเข้ากระเป๋า</button>
       </div>`;
     UI.goto('weapon-detail');
   },
   equipWeapon(i){
     const p = Game.state.player, item = p.inventory[i]; if(!item || !item.isWeapon) return;
-    const newW = getGodlyWeapon(item.weaponId); if(!newW) return;
+    const newW = getWeaponData(item.tier, item.weaponId); if(!newW) return;
     const oldSlot = p.weaponSlot;
     p.inventory.splice(i,1);
     if(oldSlot){
-      const oldW = getGodlyWeapon(oldSlot.weaponId);
+      const oldW = getWeaponData(oldSlot.tier, oldSlot.weaponId);
       if(oldW){
         if(oldW.statBoost) Object.keys(oldW.statBoost).forEach(k=>{ if(k==='hp'){ p.maxHp-=oldW.statBoost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=oldW.statBoost[k]; });
-        Inventory.removeUltimateCard(oldW.id);
+        if(oldSlot.tier==='godly') Inventory.removeUltimateCard(oldW.id);
       }
       p.inventory.push(oldSlot); // room is guaranteed since we just removed one item above
     }
     p.weaponSlot = item;
     if(newW.statBoost) Object.keys(newW.statBoost).forEach(k=>{ if(k==='hp'){ p.maxHp+=newW.statBoost.hp; p.hp+=newW.statBoost.hp; } else p[k]+=newW.statBoost[k]; });
-    Inventory.addUltimateCard(newW);
+    if(item.tier==='godly') Inventory.addUltimateCard(newW);
     Game.save();
     Toast.show(`⚔️ สวมใส่ "${newW.name}" แล้ว!`);
     UI.goto('inventory-screen');
@@ -2729,10 +2956,10 @@ const Inventory = {
   unequipWeapon(){
     const p = Game.state.player; if(!p.weaponSlot) return;
     if(p.inventory.length>=10){ Toast.show('กระเป๋าเต็ม ถอดไม่ได้'); return; }
-    const w = getGodlyWeapon(p.weaponSlot.weaponId);
+    const w = getWeaponData(p.weaponSlot.tier, p.weaponSlot.weaponId);
     if(w){
       if(w.statBoost) Object.keys(w.statBoost).forEach(k=>{ if(k==='hp'){ p.maxHp-=w.statBoost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=w.statBoost[k]; });
-      Inventory.removeUltimateCard(w.id);
+      if(p.weaponSlot.tier==='godly') Inventory.removeUltimateCard(w.id);
     }
     p.inventory.push(p.weaponSlot);
     p.weaponSlot = null;
@@ -2787,38 +3014,45 @@ const Gacha = {
       Game.save(); Render.hub();
     },1650);
   },
+  // Picks an actual weapon from TIER_WEAPONS[tier]. 65% chance it matches the player's own
+  // class element (so most pulls feel usable right away), 35% chance it's a random element
+  // (so the gacha still has a reason to exist for players wanting to build alt/off-element decks).
+  pickTierWeapon(p, tier){
+    const ELEMENTS = ['fire','wood','water','light','dark','physical'];
+    const myElem = playerElement(p) || ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)];
+    const elem = Math.random()<0.65 ? myElem : ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)];
+    const pool = TIER_WEAPONS[tier].filter(w=>w.element===elem);
+    return pool[Math.floor(Math.random()*pool.length)] || TIER_WEAPONS[tier][Math.floor(Math.random()*TIER_WEAPONS[tier].length)];
+  },
   rollOnce(p){
     p.gachaSpins = (p.gachaSpins||0) + 1;
     // Pity system: the 1000th, 2000th, 3000th... lifetime spin is a guaranteed godly weapon.
     const pityHit = (p.gachaSpins % 1000 === 0);
     const roll = Math.random();
+    // ---- Gacha rarity odds ----
+    // 0.01%  Godly  (10 unique ultimate-skill weapons, plus guaranteed every 1,000th spin)
+    // 3%     Epic   (highest passive stat boost of the 3 plain tiers, no ultimate)
+    // 12%    Rare   (medium passive stat boost)
+    // ~85%   Common (small passive stat boost — bulk of pulls, so players almost always
+    //                walk away with something equippable instead of a pure consumable)
     if(pityHit || roll < 0.0001){
       const w = GODLY_WEAPONS[Math.floor(Math.random()*GODLY_WEAPONS.length)];
-      grantWeapon(w.id);
+      grantWeapon(w.id, 'godly');
       const pityTag = pityHit ? ' (การันตีจากระบบ Pity ครบ 1,000 ครั้ง!)' : '';
       Toast.show('🌟🌟🌟 อาวุธระดับเทพ!! '+w.name+pityTag);
       return {name:`${w.name} (${w.nameEn})`+pityTag, tier:'god', tierLabel:pityHit?'GOD-TIER · PITY':'GOD-TIER 0.01%'};
     } else if(roll < 0.03){
-      const weaponName = 'อาวุธระดับ Epic: '+NORMAL_WEAPONS[Math.floor(Math.random()*NORMAL_WEAPONS.length)];
-      const epicPool = ['charm_power','crystal_power','potion_temp_atk'];
-      const pick = epicPool[Math.floor(Math.random()*epicPool.length)];
-      grantLoot(pick, 1);
-      return {name:weaponName+' + '+ITEM_TEMPLATES[pick].name, tier:'epic', tierLabel:'EPIC'};
-    } else if(roll < 0.08){
-      const uncommonPool = ['potion_medium','potion_temp_atk','charm_dropboost','potion_goldboost'];
-      const pick = uncommonPool[Math.floor(Math.random()*uncommonPool.length)];
-      grantLoot(pick, 1);
-      return {name:'อาวุธระดับ Uncommon + '+ITEM_TEMPLATES[pick].name, tier:'uncommon', tierLabel:'UNCOMMON'};
-    } else if(roll < 0.20){
-      const rarePool = ['charm_luck','crystal_shield','clover_luck','potion_temp_luck'];
-      const pick = rarePool[Math.floor(Math.random()*rarePool.length)];
-      grantLoot(pick, 1);
-      return {name:'อาวุธระดับ Rare + '+ITEM_TEMPLATES[pick].name, tier:'rare', tierLabel:'RARE'};
+      const w = this.pickTierWeapon(p, 'epic');
+      grantWeapon(w.id, 'epic');
+      return {name:`${w.name} (PWR ${w.power})`, tier:'epic', tierLabel:'EPIC'};
+    } else if(roll < 0.15){
+      const w = this.pickTierWeapon(p, 'rare');
+      grantWeapon(w.id, 'rare');
+      return {name:`${w.name} (PWR ${w.power})`, tier:'rare', tierLabel:'RARE'};
     } else {
-      const commonPool = ['potion_small','potion_medium','coin_gamble','dice_luck','card_fate'];
-      const pick = commonPool[Math.floor(Math.random()*commonPool.length)];
-      grantLoot(pick, 1);
-      return {name:ITEM_TEMPLATES[pick].name, tier:'common', tierLabel:'COMMON'};
+      const w = this.pickTierWeapon(p, 'common');
+      grantWeapon(w.id, 'common');
+      return {name:`${w.name} (PWR ${w.power})`, tier:'common', tierLabel:'COMMON'};
     }
   }
 };
@@ -2832,29 +3066,45 @@ const Trade = {
     const pl = Game.state.party[peerId];
     document.getElementById('trade-offer-area').innerHTML = `
       <div class="panel"><div class="eyebrow">เสนอเทรดกับ ${pl?pl.name:'ผู้เล่น'}</div>
-        <p class="small-text">เลือกไอเทม/การ์ดที่จะเสนอ แล้วส่งคำขอผ่าน P2P</p>
+        <p class="small-text">เลือกไอเทม/การ์ดที่จะเสนอ หรือระบุจำนวนเงินที่จะเทรด แล้วส่งคำขอผ่าน P2P</p>
+        <div class="panel" style="margin:8px 0;">
+          <div class="eyebrow">🪙 เทรดเงิน (มีอยู่ ${Game.state.player.gold} 🪙)</div>
+          <input type="text" inputmode="numeric" id="trade-gold-amount" placeholder="จำนวนทองคำที่จะเทรด (ปล่อยว่างถ้าไม่เทรดเงิน)">
+        </div>
         <div id="trade-my-items"></div>
         <button class="btn gold" onclick="Trade.sendOffer()">📤 ส่งข้อเสนอ</button></div>`;
     const p = Game.state.player;
     document.getElementById('trade-my-items').innerHTML = p.deck.map((c,i)=>`
       <label class="small-text" style="display:block;padding:4px 0;"><input type="checkbox" class="trade-card-cb" data-i="${i}"> ${c.name} (${ELEM_NAME[c.element]})</label>`).join('') +
-      p.inventory.map((it,i)=>{ const tpl = it.isWeapon ? (getGodlyWeapon(it.weaponId)||{name:'อาวุธ'}) : (it.cardData? {name:it.cardData.name}:ITEM_TEMPLATES[it.tplId]);
+      p.inventory.map((it,i)=>{ const tpl = it.isWeapon ? (getWeaponData(it.tier, it.weaponId)||{name:'อาวุธ'}) : (it.cardData? {name:it.cardData.name}:ITEM_TEMPLATES[it.tplId]);
         return `<label class="small-text" style="display:block;padding:4px 0;"><input type="checkbox" class="trade-item-cb" data-i="${i}"> ${tpl.name}</label>`; }).join('');
   },
   sendOffer(){
     const cardIdxs = [...document.querySelectorAll('.trade-card-cb:checked')].map(e=>+e.dataset.i);
     const itemIdxs = [...document.querySelectorAll('.trade-item-cb:checked')].map(e=>+e.dataset.i);
-    if(!cardIdxs.length && !itemIdxs.length){ Toast.show('เลือกอย่างน้อย 1 รายการ'); return; }
+    const goldInput = document.getElementById('trade-gold-amount');
+    const goldRaw = goldInput ? goldInput.value.trim() : '';
+    let goldAmount = 0;
+    if(goldRaw){
+      goldAmount = Math.floor(Number(goldRaw));
+      if(!Number.isFinite(goldAmount) || goldAmount<=0){ Toast.show('จำนวนทองคำไม่ถูกต้อง'); return; }
+    }
     const p = Game.state.player;
+    if(goldAmount > p.gold){ Toast.show(`ทองคำไม่พอ — คุณมี ${p.gold}🪙`); return; }
+    if(!cardIdxs.length && !itemIdxs.length && !goldAmount){ Toast.show('เลือกอย่างน้อย 1 รายการ หรือระบุจำนวนทองคำ'); return; }
     const cardRefs = cardIdxs.map(i=>p.deck[i]);
     const itemRefs = itemIdxs.map(i=>p.inventory[i]);
+    // Gold can't be held by reference like cards/items, so we reserve it immediately by
+    // deducting it from our balance right away. If the trade is declined (or never
+    // answered), Trade.refundGold() below gives it back — nothing is lost in the meantime.
+    if(goldAmount>0){ p.gold -= goldAmount; Game.save(); Render.hub(); }
     // Keep the exact object references we're offering. We do NOT remove them from our own
     // deck/inventory yet — only once the other side actually confirms trade_accept. If they
     // decline (or never respond), we still have our items; nothing was given away for free.
-    this.pendingOffers[this.target] = { cardRefs, itemRefs };
-    const payload = { type:'trade_offer', from:Net.peerId, fromName:p.name, cards: cardRefs, items: itemRefs };
-    Net.sendTo(this.target, payload);
-    Toast.show('ส่งข้อเสนอเทรดแล้ว รอการตอบรับ');
+    this.pendingOffers[this.target] = { cardRefs, itemRefs, goldAmount };
+    const payload = { type:'trade_offer', from:Net.peerId, fromName:p.name, cards: cardRefs, items: itemRefs, gold: goldAmount };
+    Net.sendToPeer(this.target, payload);
+    Toast.show(goldAmount>0 ? `ส่งข้อเสนอเทรดแล้ว (รวมทองคำ ${goldAmount}🪙) รอการตอบรับ` : 'ส่งข้อเสนอเทรดแล้ว รอการตอบรับ');
   },
   // Called when the OTHER side confirms they received our offer — this is the only place
   // that actually removes cards/items from our side, closing the duplication hole where
@@ -2878,18 +3128,37 @@ const Trade = {
     cardIdxsNow.forEach(i=>p.deck.splice(i,1));
     const itemIdxsNow = acceptedItemRefs.map(ref=>p.inventory.indexOf(ref)).filter(i=>i>=0).sort((a,b)=>b-a);
     itemIdxsNow.forEach(i=>p.inventory.splice(i,1));
+    // Gold was already deducted from our balance the moment we sent the offer, so there's
+    // nothing further to remove here — it has fully left our hands and gone to the recipient.
     Game.save(); Render.inventory();
-    if(skippedCount>0) Toast.show(`⚠️ คู่เทรดกระเป๋า/สำรับเต็ม รับได้ไม่ครบ — ${skippedCount} รายการยังอยู่กับคุณเหมือนเดิม`);
+    if(skippedCount>0) Toast.show(`⚠️ คู่เทรดกระเป๋า/สำรับเต็ม รับได้ไม่ครบ — ${skippedCount} รายการยังอยู่กับคุณเหมือนเดิม${offer.goldAmount?` (ทองคำ ${offer.goldAmount}🪙 ถูกโอนไปแล้ว)`:''}`);
+  },
+  // If our offer is declined (or the recipient's connection drops before confirming), give
+  // back any gold we pre-emptively deducted at send time so nothing is lost.
+  refundGold(fromId){
+    const offer = this.pendingOffers[fromId]; if(!offer) return;
+    delete this.pendingOffers[fromId];
+    if(offer.goldAmount>0){
+      Game.state.player.gold += offer.goldAmount;
+      Game.save(); Render.hub();
+      Toast.show(`↩️ คู่เทรดปฏิเสธ — คืนทองคำ ${offer.goldAmount}🪙 ให้คุณแล้ว`);
+    } else {
+      Toast.show('คู่เทรดปฏิเสธข้อเสนอ');
+    }
   },
   handleIncomingOffer(msg){
-    if(!confirm(`${msg.fromName||'ผู้เล่น'} เสนอเทรด ${msg.cards.length} การ์ด + ${msg.items.length} ไอเทม รับหรือไม่?`)){ Net.sendTo(msg.from, {type:'trade_decline'}); return; }
+    const goldAmount = msg.gold || 0;
+    const goldLine = goldAmount>0 ? ` + ทองคำ ${goldAmount}🪙` : '';
+    if(!confirm(`${msg.fromName||'ผู้เล่น'} เสนอเทรด ${msg.cards.length} การ์ด + ${msg.items.length} ไอเทม${goldLine} รับหรือไม่?`)){ Net.sendToPeer(msg.from, {type:'trade_decline', from:Net.peerId}); return; }
     const p = Game.state.player, receivedNames = [];
     const acceptedCardIdxs = [], acceptedItemIdxs = [];
     msg.cards.forEach((c,i)=>{ if(p.deck.length<p.deckLimit){ p.deck.push(c); receivedNames.push(c.name); acceptedCardIdxs.push(i); } });
     msg.items.forEach((it,i)=>{ if(p.inventory.length<10){ p.inventory.push(it); acceptedItemIdxs.push(i);
-      const tplName = it.isWeapon ? (getGodlyWeapon(it.weaponId)? getGodlyWeapon(it.weaponId).name : 'อาวุธ') : (it.cardData ? it.cardData.name : (ITEM_TEMPLATES[it.tplId] ? ITEM_TEMPLATES[it.tplId].name : it.tplId));
+      const tplName = it.isWeapon ? (getWeaponData(it.tier, it.weaponId)? getWeaponData(it.tier, it.weaponId).name : 'อาวุธ') : (it.cardData ? it.cardData.name : (ITEM_TEMPLATES[it.tplId] ? ITEM_TEMPLATES[it.tplId].name : it.tplId));
       receivedNames.push(tplName); } });
-    Game.save(); Render.inventory();
+    // Gold has no capacity limit like the bag/deck do, so it's always accepted in full.
+    if(goldAmount>0){ p.gold += goldAmount; receivedNames.push(`${goldAmount}🪙`); }
+    Game.save(); Render.inventory(); Render.hub();
     const totalOffered = msg.cards.length+msg.items.length, totalAccepted = acceptedCardIdxs.length+acceptedItemIdxs.length;
     if(!receivedNames.length){
       Toast.show('การเทรดเสร็จสิ้น แต่กระเป๋า/สำรับเต็ม — ไม่ได้รับอะไรเลย');
@@ -2898,7 +3167,7 @@ const Trade = {
     } else {
       Toast.show(`🤝 ได้รับ: ${receivedNames.join(', ')} เข้ากระเป๋า/สำรับแล้ว!`);
     }
-    Net.sendTo(msg.from, {type:'trade_accept', acceptedCardIdxs, acceptedItemIdxs});
+    Net.sendToPeer(msg.from, {type:'trade_accept', from:Net.peerId, acceptedCardIdxs, acceptedItemIdxs});
   }
 };
 
@@ -2931,7 +3200,8 @@ const Net = {
     const p = Game.state.player;
     if(!p) return {name:'ผู้เล่น'};
     return { name:p.name, hp:p.hp, maxHp:p.maxHp, atk:p.atk, mag:p.mag, luk:p.luk,
-      floorDemon:p.floorDemon, deck:p.deck.map(c=>({name:c.name, element:c.element, power:c.power, cardEffect:c.cardEffect||null, cardEffectData:c.cardEffectData||null})) };
+      floorDemon:p.floorDemon, deck:p.deck.map(c=>({name:c.name, element:c.element, power:c.power, cardEffect:c.cardEffect||null, cardEffectData:c.cardEffectData||null})),
+      weapon: getEquippedWeaponCard(p) };
   },
   init(){
     if(typeof Peer === 'undefined'){ this.status='unavailable'; this.lastError='ไม่สามารถโหลดไลบรารี PeerJS ได้ (สคริปต์จาก CDN ถูกบล็อก)'; Render.lobby(); return; }
@@ -3006,6 +3276,9 @@ const Net = {
     conn.on('close', ()=>{
       if(Game.state.party[conn.peer]) Game.state.party[conn.peer].online=false;
       Render.lobby();
+      // If we had a pending gold offer sent to this peer and they vanished before
+      // accepting/declining, refund it now instead of leaving it stuck in limbo.
+      if(Trade.pendingOffers[conn.peer]) Trade.refundGold(conn.peer);
       if(this.isHost){
         this.relayRoster();
         // A party member's connection dropped mid co-op fight — don't let the whole
@@ -3022,6 +3295,17 @@ const Net = {
     conn.on('open', ()=>{ this.sendTo(conn.peer, Object.assign({type:'hello'}, this.myStatPayload())); Render.lobby(); });
   },
   sendTo(peerId, payload){ const c = this.conns[peerId]; if(c && c.open) c.send(payload); },
+  // Star topology means non-host peers only ever have a direct connection to the Host —
+  // two joiners are never directly connected to each other. sendToPeer() is the
+  // "smart" version of sendTo(): it sends directly if a direct connection exists
+  // (e.g. peer IS the host, or WE are the host), and otherwise asks the Host to relay
+  // the payload on our behalf so any two party members can reach each other without
+  // routing app-level logic (like trade) through host-specific code paths.
+  sendToPeer(peerId, payload){
+    if(this.conns[peerId] && this.conns[peerId].open){ this.sendTo(peerId, payload); return; }
+    if(!this.isHost && this.hostId){ this.sendTo(this.hostId, {type:'relay', target:peerId, payload}); return; }
+    console.warn('sendToPeer: no route to', peerId, '(not connected, and no host to relay through)');
+  },
   broadcast(payload, excludeId){ Object.entries(this.conns).forEach(([id,c])=>{ if(id!==excludeId && c.open) c.send(payload); }); },
   // Host-only: pushes the full known roster (every party member's latest stats) out to
   // every connected client, so joiners who never connect directly to each other still see
@@ -3034,6 +3318,14 @@ const Net = {
   },
   handleData(fromId, data){
     if(!data || !data.type) return;
+    if(data.type==='relay'){
+      // Only meaningful on the Host, who is the only peer with a direct connection to
+      // every other party member. Forward the wrapped payload on to its real target
+      // completely as-is (the sender already put their own peer id inside the payload
+      // wherever it matters, e.g. trade_offer.from), so this is a transparent pass-through.
+      if(this.isHost) this.sendTo(data.target, data.payload);
+      return;
+    }
     if(data.type==='hello'){
       Game.state.party[fromId] = Object.assign(Game.state.party[fromId]||{id:fromId}, data, {id:fromId, online:true});
       delete Game.state.party[fromId].type;
@@ -3041,14 +3333,20 @@ const Net = {
       if(this.isHost) this.relayRoster();
     }
     else if(data.type==='party_update'){
-      Object.entries(data.party).forEach(([id,info])=>{ if(id!==this.peerId) Game.state.party[id] = Object.assign(Game.state.party[id]||{}, info, {id}); });
+      Object.entries(data.party).forEach(([id,info])=>{
+        if(id!==this.peerId){
+          const wasOnline = Game.state.party[id] && Game.state.party[id].online!==false;
+          Game.state.party[id] = Object.assign(Game.state.party[id]||{}, info, {id});
+          if(wasOnline && info.online===false && Trade.pendingOffers[id]) Trade.refundGold(id);
+        }
+      });
       Render.lobby();
       if(UI.current==='demon-tower') Render.demonTower();
     }
     else if(data.type==='state_sync'){ Game.state.party[fromId] = Object.assign(Game.state.party[fromId]||{id:fromId}, data.state, {online:true}); if(UI.current==='demon-tower') Render.demonTower(); }
     else if(data.type==='trade_offer'){ Trade.handleIncomingOffer(data); }
-    else if(data.type==='trade_accept'){ Trade.finalizeSentOffer(fromId, data.acceptedCardIdxs, data.acceptedItemIdxs); Toast.show('คู่เทรดยอมรับข้อเสนอแล้ว'); }
-    else if(data.type==='trade_decline'){ delete Trade.pendingOffers[fromId]; Toast.show('คู่เทรดปฏิเสธข้อเสนอ'); }
+    else if(data.type==='trade_accept'){ Trade.finalizeSentOffer(data.from||fromId, data.acceptedCardIdxs, data.acceptedItemIdxs); Toast.show('คู่เทรดยอมรับข้อเสนอแล้ว'); }
+    else if(data.type==='trade_decline'){ Trade.refundGold(data.from||fromId); }
     else if(data.type==='pvp_invite'){ Combat.onPvpInvited(fromId, data); }
     else if(data.type==='pvp_lock'){ Combat.onPvpOpponentLock(fromId, data); }
     else if(data.type==='coop_request_start'){
