@@ -77,6 +77,23 @@ input:focus{outline:1px solid var(--gold);}
 .card .cname{font-weight:700;font-size:14.5px;} .card .cpower{float:right;color:var(--gold);font-weight:700;}
 .card .cdesc{font-size:11.5px;color:var(--text-dim);margin-top:3px;}
 .card.disabled{opacity:.35;pointer-events:none;}
+/* ---- compact combat hand: 3 cards per row on every battle screen ---- */
+.hand-grid{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;}
+.hand-grid .card{width:calc((100% - 12px)/3);margin:0;padding:6px;box-sizing:border-box;}
+.hand-grid .card .cname{font-size:11.5px;display:block;white-space:normal;line-height:1.2;}
+.hand-grid .card .cpower{float:none;display:block;font-size:11px;margin-top:1px;}
+.hand-grid .card .elem-tag{font-size:9.5px;padding:1px 5px;}
+.hand-grid .card .cdesc{display:none;}
+.card-bag-wrap{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);}
+.card-bag-wrap .bag-title{font-size:12px;color:var(--text-dim);margin-bottom:4px;}
+.card-bag-wrap .bag-cards{display:flex;flex-wrap:wrap;gap:6px;}
+.card-bag-wrap .card{width:calc((100% - 12px)/3);margin:0;padding:6px;box-sizing:border-box;opacity:.85;}
+.card-bag-wrap .card .cname{font-size:11px;display:block;line-height:1.2;}
+.card-bag-wrap .card .cpower{float:none;display:block;font-size:10.5px;}
+.card-bag-wrap .swap-row{display:flex;gap:3px;margin-top:4px;}
+.card-bag-wrap .swap-row button{flex:1;font-size:10px;padding:3px 0;border-radius:5px;border:1px solid var(--gold);
+  background:transparent;color:var(--gold);cursor:pointer;}
+.card-bag-wrap .swap-row button:active{background:var(--gold);color:#000;}
 .dice{width:74px;height:74px;margin:14px auto;border:2px solid var(--gold);border-radius:14px;
   display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;
   background:radial-gradient(circle at 30% 30%,#2a2040,#100b1a);color:var(--gold);
@@ -1120,6 +1137,35 @@ const ConfirmDialog = {
   }
 };
 
+/* Swap two cards inside the player's deck array (used to bring a "bag" card
+   into one of the 3 active battle slots, and vice versa). */
+function swapDeckCards(idxA, idxB){
+  const p = Game.state.player;
+  if(idxA===idxB || !p.deck || !p.deck[idxA] || !p.deck[idxB]) return;
+  const tmp = p.deck[idxA]; p.deck[idxA] = p.deck[idxB]; p.deck[idxB] = tmp;
+  Game.save();
+}
+/* Build the "bag" HTML for cards beyond the active 3-per-row battle hand.
+   activeCount is normally 3 (or less if the deck itself has fewer cards).
+   onSwapFn is the name of a global function(bagIdx) that re-renders the
+   specific screen (combat / pvp / coop) after performing the swap. */
+function renderCardBagHtml(deck, activeCount, onSwapFn){
+  if(!deck || deck.length<=activeCount) return '';
+  const bagCards = deck.slice(activeCount);
+  return `<div class="card-bag-wrap">
+    <div class="bag-title">🎒 การ์ดสำรอง (เกิน 3 ใบ) — แตะปุ่มเพื่อสลับเข้าไปในการ์ดที่ใช้ต่อสู้</div>
+    <div class="bag-cards">${bagCards.map((c,j)=>{
+      const bagIdx = activeCount+j;
+      return `<div class="card" onclick="CardInfo.show(Game.state.player.deck[${bagIdx}])">
+        <span class="cname">${c.name}</span><span class="cpower">PWR ${c.power}</span>
+        <div class="elem-tag ${ELEM_CLASS[c.element]}">${ELEM_NAME[c.element]}</div>
+        <div class="swap-row">${Array.from({length:activeCount},(_,s)=>
+          `<button onclick="event.stopPropagation();swapDeckCards(${bagIdx},${s});${onSwapFn}();">สลับช่อง${s+1}</button>`).join('')}
+        </div></div>`;
+    }).join('')}</div>
+  </div>`;
+}
+
 /* Center-screen item-gain popup — used for boss kills, monster kills, and gacha spins.
    Queues entries so multiple drops (e.g. gacha x10) display one after another instead of overlapping. */
 const LootPopup = {
@@ -1588,7 +1634,8 @@ const Combat = {
           <div class="hpbar-label">${Math.max(0,p.hp)} / ${p.maxHp}</div></div>
       </div>`;
     document.getElementById('combat-chance').textContent = `🎯 โอกาสสำเร็จ (โจมตีติด + หลบเต็มที่): ${lukSuccessChance(effLuk).toFixed(1)}% — ทอยลูกเต๋าได้ ≤${d20Threshold(lukSuccessChance(effLuk))}/20 จึงจะสำเร็จ`;
-    document.getElementById('combat-hand').innerHTML = p.deck.map((c,i)=>{
+    const activeCount = Math.min(3, p.deck.length);
+    document.getElementById('combat-hand').innerHTML = '<div class="hand-grid">' + p.deck.slice(0,activeCount).map((c,i)=>{
       const isOncePerFight = c.effects && c.effects.some(e=>e.type==='once_per_fight');
       const alreadyUsed = isOncePerFight && c.skillId && this.active.usedOnce[c.skillId];
       const effTip = c.desc ? c.desc : '';
@@ -1601,7 +1648,7 @@ const Combat = {
           <div class="elem-tag ${ELEM_CLASS[c.element]}">${ELEM_NAME[c.element]}</div>
           <span onclick="event.stopPropagation();CardInfo.show(Game.state.player.deck[${i}]);" style="font-size:14px;">ℹ️</span>
         </div></div>`;
-    }).join('');
+    }).join('') + '</div>' + renderCardBagHtml(p.deck, activeCount, 'Combat.render');
     document.getElementById('btn-play-card').disabled = this.active.selectedCard===undefined || this.active.selectedCard===null;
     const hasPotion = p.inventory.some(it=>it && ITEM_TEMPLATES[it.tplId] && ITEM_TEMPLATES[it.tplId].type==='consumable');
     document.getElementById('btn-heal-action').disabled = !hasPotion;
@@ -1999,13 +2046,14 @@ const Combat = {
     document.getElementById('pvp-my-hplabel').textContent = `${Math.max(0,pv.myHp)}/${pv.myMax}`;
     document.getElementById('pvp-opp-hpbar').style.width = pct(pv.oppHp, pv.oppMax)+'%';
     document.getElementById('pvp-opp-hplabel').textContent = `${Math.max(0,pv.oppHp)}/${pv.oppMax}`;
-    document.getElementById('pvp-hand').innerHTML = p.deck.map((c,i)=>`
+    const activeCount = Math.min(3, p.deck.length);
+    document.getElementById('pvp-hand').innerHTML = '<div class="hand-grid">' + p.deck.slice(0,activeCount).map((c,i)=>`
       <div class="card ${pv.mySelIndex===i?'selected':''} ${pv.mySel?'disabled':''}" onclick="Combat.selectPvpCard(${i})">
         <span class="cname">${c.name}</span><span class="cpower">PWR ${c.power}</span>
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div class="elem-tag ${ELEM_CLASS[c.element]}">${ELEM_NAME[c.element]}</div>
           <span onclick="event.stopPropagation();CardInfo.show(Game.state.player.deck[${i}]);" style="font-size:14px;">ℹ️</span>
-        </div></div>`).join('');
+        </div></div>`).join('') + '</div>' + (pv.mySel ? '' : renderCardBagHtml(p.deck, activeCount, 'Combat.renderPvp'));
     document.getElementById('pvp-log').innerHTML = pv.log.slice(0,30).map(l=>`<div class="${l.cls}">${l.msg}</div>`).join('');
     document.getElementById('pvp-status').textContent = pv.mySel ? '⏳ รอคู่ต่อสู้ล็อกการ์ด...' : `🎯 โอกาสสำเร็จของคุณ: ${lukSuccessChance(p.luk).toFixed(1)}% — เลือกการ์ดแล้วกดล็อก`;
     document.getElementById('btn-pvp-lock').disabled = pv.mySelIndex===undefined || pv.mySelIndex===null || !!pv.mySel;
@@ -2323,13 +2371,15 @@ const CoopCombat = {
     if(curId===Net.peerId && !st.locked){
       const p = Game.state.player;
       const hasPotion = p.inventory.some(it=>it && ITEM_TEMPLATES[it.tplId] && ITEM_TEMPLATES[it.tplId].type==='consumable');
-      handArea.innerHTML = `<div id="coop-hand">${p.deck.map((c,i)=>`
+      const activeCount = Math.min(3, p.deck.length);
+      handArea.innerHTML = `<div id="coop-hand" class="hand-grid">${p.deck.slice(0,activeCount).map((c,i)=>`
         <div class="card ${st.selectedCard===i?'selected':''}" onclick="CoopCombat.selectCard(${i})">
           <span class="cname">${c.name}</span><span class="cpower">PWR ${c.power}</span>
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div class="elem-tag ${ELEM_CLASS[c.element]}">${ELEM_NAME[c.element]}</div>
             <span onclick="event.stopPropagation();CardInfo.show(Game.state.player.deck[${i}]);" style="font-size:14px;">ℹ️</span>
           </div></div>`).join('')}</div>
+        ${renderCardBagHtml(p.deck, activeCount, 'CoopCombat.render')}
         <div class="btn-row">
           <button class="btn" id="coop-btn-heal-action" onclick="CoopCombat.openHealMenu()" ${hasPotion?'':'disabled'}>🎒 ใช้ยาฟื้นฟู HP</button>
           <button class="btn primary" onclick="CoopCombat.confirmCard()" ${(st.selectedCard===null||st.selectedCard===undefined)?'disabled':''}>⚔️ เล่นการ์ดที่เลือก</button>
