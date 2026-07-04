@@ -69,6 +69,18 @@ input:focus{outline:1px solid var(--gold);}
 .elem-fire{color:var(--fire);border-color:var(--fire);} .elem-wood{color:var(--wood);border-color:var(--wood);}
 .elem-water{color:var(--water);border-color:var(--water);} .elem-light{color:var(--light);border-color:var(--light);}
 .elem-dark{color:var(--dark);border-color:var(--dark);} .elem-physical{color:var(--physical);border-color:var(--physical);}
+/* Weapon skill "transformation" screen tint — applied to the combat screen while a
+   godly weapon ultimate is active, cleared when the fight ends. */
+#screen-combat{transition:background .6s ease;}
+#screen-combat.tint-fire{background:radial-gradient(1200px 700px at 50% -10%,rgba(255,107,74,.32) 0%,transparent 60%),radial-gradient(900px 500px at 90% 110%,rgba(255,107,74,.16) 0%,transparent 55%),var(--bg-void);}
+#screen-combat.tint-wood{background:radial-gradient(1200px 700px at 50% -10%,rgba(126,200,80,.32) 0%,transparent 60%),radial-gradient(900px 500px at 90% 110%,rgba(126,200,80,.16) 0%,transparent 55%),var(--bg-void);}
+#screen-combat.tint-water{background:radial-gradient(1200px 700px at 50% -10%,rgba(74,168,255,.32) 0%,transparent 60%),radial-gradient(900px 500px at 90% 110%,rgba(74,168,255,.16) 0%,transparent 55%),var(--bg-void);}
+#screen-combat.tint-light{background:radial-gradient(1200px 700px at 50% -10%,rgba(255,242,184,.32) 0%,transparent 60%),radial-gradient(900px 500px at 90% 110%,rgba(255,242,184,.16) 0%,transparent 55%),var(--bg-void);}
+#screen-combat.tint-dark{background:radial-gradient(1200px 700px at 50% -10%,rgba(139,92,246,.32) 0%,transparent 60%),radial-gradient(900px 500px at 90% 110%,rgba(139,92,246,.16) 0%,transparent 55%),var(--bg-void);}
+#screen-combat.tint-physical{background:radial-gradient(1200px 700px at 50% -10%,rgba(201,195,214,.32) 0%,transparent 60%),radial-gradient(900px 500px at 90% 110%,rgba(201,195,214,.16) 0%,transparent 55%),var(--bg-void);}
+.weapon-slot-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px 12px;margin:6px 0;
+  border-radius:4px;background:var(--bg-panel2);border:1px solid var(--line);font-size:13px;cursor:pointer;}
+.weapon-slot-btn:disabled{opacity:.45;cursor:default;}
 .card{border:1px solid var(--line);border-radius:8px;padding:10px;margin:6px 0;background:
   linear-gradient(160deg,var(--bg-panel2),var(--bg-panel));cursor:pointer;position:relative;}
 .card:active{transform:scale(.98);}
@@ -270,6 +282,7 @@ textarea{width:100%;min-height:70px;background:var(--bg-panel);border:1px solid 
       <div class="dice" id="dice-display">?</div>
       <div class="log" id="combat-log"></div>
       <div class="divider"></div>
+      <div id="combat-weapon-slot"></div>
       <div id="combat-hand"></div>
       <div class="btn-row">
         <button class="btn" id="btn-heal-action" onclick="Combat.openHealMenu()">🎒 เปิดกระเป๋า / ใช้ไอเทม</button>
@@ -1611,6 +1624,7 @@ const Combat = {
     };
     document.getElementById('combat-title').textContent = (mode==='demon'?'หอคอยปีศาจ ชั้น ':'หอฝึกฝน ชั้น ')+floor;
     document.getElementById('combat-log').innerHTML = '';
+    this.clearElementTint();
     this._log('sys', `⚔️ เผชิญหน้ากับ ${monster.name}!`);
     if(buffAtk) this._log('sys', `🥊 ยาเพิ่มพลังโจมตีทำงาน! ATK +${buffAtk} ตลอดการต่อสู้นี้`);
     if(buffLuk) this._log('sys', `🎋 ยาเพิ่มโชคทำงาน! LUK +${buffLuk} ตลอดการต่อสู้นี้`);
@@ -1662,6 +1676,53 @@ const Combat = {
     document.getElementById('btn-play-card').disabled = this.active.selectedCard===undefined || this.active.selectedCard===null;
     const hasPotion = p.inventory.some(it=>it && ITEM_TEMPLATES[it.tplId] && ITEM_TEMPLATES[it.tplId].type==='consumable');
     document.getElementById('btn-heal-action').disabled = !hasPotion;
+    this.renderWeaponSlot();
+  },
+  // Small dedicated slot reserved for weapon skills — right now the only one that exists
+  // is a godly weapon's ultimate card (if equipped). Tapping it plays that skill directly
+  // in one tap instead of having to dig it out of the hand/bag. Empty and disabled if no
+  // weapon skill is unlocked yet, so the slot is just there waiting for future skills.
+  renderWeaponSlot(){
+    const el = document.getElementById('combat-weapon-slot'); if(!el) return;
+    const p = Game.state.player;
+    const ultCard = p.deck.find(c=>c.godTier);
+    if(!ultCard){
+      el.innerHTML = `<button class="weapon-slot-btn" disabled>🗡️ ช่องสกิลอาวุธ (ยังไม่ปลดล็อก)</button>`;
+      return;
+    }
+    const offElem = ultCard.element !== playerElement(p);
+    const busy = !!(this.active && this.active._weaponBusy);
+    el.innerHTML = `<button class="weapon-slot-btn" style="border-color:var(--${ultCard.element});" ${(offElem||busy)?'disabled':''} onclick="Combat.useWeaponSkill()">
+      🗡️ ${ultCard.name}${offElem?' (ธาตุไม่ตรง)':''}</button>`;
+  },
+  // Fired by tapping the weapon slot: selects the ultimate card (wherever it sits in the
+  // deck, no need to swap it into the visible hand first) and plays it immediately, while
+  // tinting the whole combat screen in that element's color — like a transformation —
+  // until the fight ends.
+  useWeaponSkill(){
+    if(!this.active || this.active._weaponBusy) return;
+    const p = Game.state.player;
+    const ultCard = p.deck.find(c=>c.godTier);
+    if(!ultCard){ Toast.show('ยังไม่มีสกิลอาวุธให้ใช้'); return; }
+    if(ultCard.element !== playerElement(p)){ Toast.show(`⛔ ใช้ได้เฉพาะการ์ดธาตุ ${ELEM_NAME[playerElement(p)]} เท่านั้น`); return; }
+    const idx = p.deck.indexOf(ultCard);
+    this.active.selectedCard = idx;
+    this.active._weaponBusy = true;
+    this.activateElementTint(ultCard.element);
+    this.renderWeaponSlot();
+    this.confirmCard();
+  },
+  ELEMENT_KEYS: ['fire','wood','water','light','dark','physical'],
+  activateElementTint(elem){
+    if(this.active) this.active.tintElement = elem;
+    const el = document.getElementById('screen-combat'); if(!el) return;
+    this.ELEMENT_KEYS.forEach(e=>el.classList.remove('tint-'+e));
+    el.classList.add('tint-'+elem);
+  },
+  clearElementTint(){
+    if(this.active) this.active.tintElement = null;
+    const el = document.getElementById('screen-combat'); if(!el) return;
+    this.ELEMENT_KEYS.forEach(e=>el.classList.remove('tint-'+e));
   },
   selectCard(i){
     const c = Game.state.player.deck[i];
@@ -1923,6 +1984,7 @@ const Combat = {
       }
       this.active.turnsElapsed = (this.active.turnsElapsed||0) + 1;
       this.active.selectedCard = null;
+      this.active._weaponBusy = false;
       Game.save();
       if(m.hp<=0){ this.onMonsterDefeated(); return; }
       if(p.hp<=0){ this.onPlayerDown(); return; }
@@ -1945,6 +2007,7 @@ const Combat = {
     },45);
   },
   onPlayerDown(){
+    this.clearElementTint();
     const p = Game.state.player;
     if(this.active.mode==='demon'){
       const reviveIdx = p.inventory.findIndex(it=>it && it.tplId==='potion_revive');
@@ -1966,6 +2029,7 @@ const Combat = {
     }
   },
   onMonsterDefeated(){
+    this.clearElementTint();
     const p = Game.state.player, m = this.active.monster, mode = this.active.mode, floor = this.active.floor;
     this._log('sys', `🏆 ปราบ ${m.name} สำเร็จ!`);
     let goldGain = 5 + Math.round(floor*1.4);
@@ -2020,6 +2084,7 @@ const Combat = {
       if(!confirm('หนีออกจากการต่อสู้? ความคืบหน้าชั้นนี้จะไม่ถูกบันทึก')) return;
     }
     const backTo = this.active && this.active.mode==='demon' ? 'demon-tower' : 'training-tower';
+    this.clearElementTint();
     this.active = null;
     UI.goto(backTo);
   },
@@ -2182,10 +2247,13 @@ const CoopCombat = {
   _buildAndStart(){
     if(this.active) return;
     const p = Game.state.player; if(!p) return;
-    const floor = p.floorDemon;
+    const online = Object.entries(Game.state.party).filter(([id,pl])=>pl.online);
+    // Use the LOWEST floorDemon in the party (host included) so nobody — not even the
+    // Host — can drag a lower-floor teammate up to their own floor. Progress is capped
+    // by whoever is furthest behind; the fight and its rewards are generated at that floor.
+    const floor = Math.min(p.floorDemon, ...online.map(([id,pl])=>typeof pl.floorDemon==='number'?pl.floorDemon:p.floorDemon));
     const isBoss = floor % 10 === 0;
     const monster = genMonster(floor, 'demon', isBoss);
-    const online = Object.entries(Game.state.party).filter(([id,pl])=>pl.online);
     const members = [{ id:Net.peerId, name:p.name, hp:p.hp, maxHp:p.maxHp, atk:p.atk, mag:p.mag, luk:p.luk,
       deck:p.deck.map(c=>({name:c.name, element:c.element, power:c.power})), alive:p.hp>0 }];
     online.forEach(([id,pl])=>{
@@ -2286,8 +2354,16 @@ const CoopCombat = {
     const wipe = !monsterDead && st.members.filter(m=>m.alive!==false && m.hp>0).length===0;
     let nextTurnIndex = st.turnIndex;
     if(!monsterDead && !wipe){
-      let idx = st.turnIndex;
-      for(let i=0;i<st.members.length;i++){ idx=(idx+1)%st.members.length; if(st.members[idx].alive!==false && st.members[idx].hp>0){ nextTurnIndex=idx; break; } }
+      let idx = st.turnIndex, found=false;
+      // Skip offline (disconnected) members entirely when picking who's up next, so the
+      // party doesn't have to sit through a full turn countdown for someone who's gone.
+      for(let i=0;i<st.members.length;i++){ idx=(idx+1)%st.members.length; if(st.members[idx].alive!==false && st.members[idx].hp>0 && st.members[idx].online!==false){ nextTurnIndex=idx; found=true; break; } }
+      if(!found){
+        // Rare edge case: every remaining standing member is offline — fall back to
+        // cycling through them anyway rather than freezing the fight entirely.
+        idx = st.turnIndex;
+        for(let i=0;i<st.members.length;i++){ idx=(idx+1)%st.members.length; if(st.members[idx].alive!==false && st.members[idx].hp>0){ nextTurnIndex=idx; break; } }
+      }
     }
     const payload = { type:'coop_turn_result', turnId:st.turnId, actorId, monsterHp:st.monster.hp,
       members: st.members.map(m=>({id:m.id, hp:m.hp, alive: m.alive!==false && m.hp>0})),
@@ -2300,6 +2376,15 @@ const CoopCombat = {
         Net.broadcast(endPayload);
         this.onEnd(endPayload);
       }, 1200);
+    } else if(Net.isHost){
+      // If the member who's now up happens to be offline (the fallback path above, or a
+      // disconnect that landed exactly on this slot), don't wait for the 10s clock at
+      // all — resolve their turn as an instant auto-timeout right away.
+      const nextActor = st.members[nextTurnIndex];
+      if(nextActor && nextActor.online===false && this._autoResolvedTurnId!==st.turnId){
+        this._autoResolvedTurnId = st.turnId;
+        this.resolveTurn(nextActor.id, 0, true);
+      }
     }
   },
 
@@ -2328,8 +2413,15 @@ const CoopCombat = {
     this.active = null;
     if(!p) return; // safety net only; normal co-op flow never nulls the player mid-fight now
     if(data.result==='victory'){
-      p.floorDemon = Math.max(p.floorDemon, data.floor+1);
-      grantDemonCardDrop(p, p.floorDemon);
+      // The fight was fought at the LOWEST floorDemon in the party (see _buildAndStart),
+      // so data.floor+1 is that shared floor's next step. If this player was already
+      // further ahead than that, leave their floor alone — co-op should never let a
+      // lagging teammate's floor pull someone else's progress backward OR forward past
+      // where they'd naturally be. Only the player(s) actually AT data.floor advance.
+      if(p.floorDemon <= data.floor){
+        p.floorDemon = data.floor+1;
+        grantDemonCardDrop(p, p.floorDemon);
+      }
       p.gold += Math.round((5+Math.round(data.floor*1.4))*2.5);
       p.hp = Math.min(p.maxHp, p.hp+Math.round(p.maxHp*0.1));
       Game.save();
@@ -2734,6 +2826,7 @@ const Gacha = {
 /* ---------------------------------- 10. TRADE (P2P) ---------------------------------- */
 const Trade = {
   target:null,
+  pendingOffers:{}, // keyed by target peerId -> {cardRefs:[...], itemRefs:[...]} sent but not yet confirmed
   openWith(peerId){
     this.target = peerId;
     const pl = Game.state.party[peerId];
@@ -2753,20 +2846,59 @@ const Trade = {
     const itemIdxs = [...document.querySelectorAll('.trade-item-cb:checked')].map(e=>+e.dataset.i);
     if(!cardIdxs.length && !itemIdxs.length){ Toast.show('เลือกอย่างน้อย 1 รายการ'); return; }
     const p = Game.state.player;
-    const payload = { type:'trade_offer', from:Net.peerId, fromName:p.name, cards: cardIdxs.map(i=>p.deck[i]), items: itemIdxs.map(i=>p.inventory[i]) };
+    const cardRefs = cardIdxs.map(i=>p.deck[i]);
+    const itemRefs = itemIdxs.map(i=>p.inventory[i]);
+    // Keep the exact object references we're offering. We do NOT remove them from our own
+    // deck/inventory yet — only once the other side actually confirms trade_accept. If they
+    // decline (or never respond), we still have our items; nothing was given away for free.
+    this.pendingOffers[this.target] = { cardRefs, itemRefs };
+    const payload = { type:'trade_offer', from:Net.peerId, fromName:p.name, cards: cardRefs, items: itemRefs };
     Net.sendTo(this.target, payload);
     Toast.show('ส่งข้อเสนอเทรดแล้ว รอการตอบรับ');
+  },
+  // Called when the OTHER side confirms they received our offer — this is the only place
+  // that actually removes cards/items from our side, closing the duplication hole where
+  // items used to be copied to the recipient without ever leaving the sender.
+  // acceptedCardIdxs/acceptedItemIdxs are indices INTO the original offer arrays (offer.cardRefs /
+  // offer.itemRefs) telling us exactly which ones the recipient actually had room for — anything
+  // not listed stays with us untouched (their bag was full, so nothing was actually transferred).
+  finalizeSentOffer(fromId, acceptedCardIdxs, acceptedItemIdxs){
+    const offer = this.pendingOffers[fromId]; if(!offer) return;
+    delete this.pendingOffers[fromId];
+    const p = Game.state.player;
+    acceptedCardIdxs = acceptedCardIdxs || offer.cardRefs.map((_,i)=>i); // fallback: old-format peer, assume all accepted
+    acceptedItemIdxs = acceptedItemIdxs || offer.itemRefs.map((_,i)=>i);
+    const acceptedCardRefs = acceptedCardIdxs.map(i=>offer.cardRefs[i]).filter(Boolean);
+    const acceptedItemRefs = acceptedItemIdxs.map(i=>offer.itemRefs[i]).filter(Boolean);
+    const skippedCount = (offer.cardRefs.length-acceptedCardRefs.length) + (offer.itemRefs.length-acceptedItemRefs.length);
+    // Remove by object reference (not by the original index, since the deck/inventory may
+    // have shifted since we sent the offer) and remove highest index first so earlier
+    // removals don't shift the indices of items still queued for removal.
+    const cardIdxsNow = acceptedCardRefs.map(ref=>p.deck.indexOf(ref)).filter(i=>i>=0).sort((a,b)=>b-a);
+    cardIdxsNow.forEach(i=>p.deck.splice(i,1));
+    const itemIdxsNow = acceptedItemRefs.map(ref=>p.inventory.indexOf(ref)).filter(i=>i>=0).sort((a,b)=>b-a);
+    itemIdxsNow.forEach(i=>p.inventory.splice(i,1));
+    Game.save(); Render.inventory();
+    if(skippedCount>0) Toast.show(`⚠️ คู่เทรดกระเป๋า/สำรับเต็ม รับได้ไม่ครบ — ${skippedCount} รายการยังอยู่กับคุณเหมือนเดิม`);
   },
   handleIncomingOffer(msg){
     if(!confirm(`${msg.fromName||'ผู้เล่น'} เสนอเทรด ${msg.cards.length} การ์ด + ${msg.items.length} ไอเทม รับหรือไม่?`)){ Net.sendTo(msg.from, {type:'trade_decline'}); return; }
     const p = Game.state.player, receivedNames = [];
-    msg.cards.forEach(c=>{ if(p.deck.length<p.deckLimit){ p.deck.push(c); receivedNames.push(c.name); } });
-    msg.items.forEach(it=>{ if(p.inventory.length<10){ p.inventory.push(it);
+    const acceptedCardIdxs = [], acceptedItemIdxs = [];
+    msg.cards.forEach((c,i)=>{ if(p.deck.length<p.deckLimit){ p.deck.push(c); receivedNames.push(c.name); acceptedCardIdxs.push(i); } });
+    msg.items.forEach((it,i)=>{ if(p.inventory.length<10){ p.inventory.push(it); acceptedItemIdxs.push(i);
       const tplName = it.isWeapon ? (getGodlyWeapon(it.weaponId)? getGodlyWeapon(it.weaponId).name : 'อาวุธ') : (it.cardData ? it.cardData.name : (ITEM_TEMPLATES[it.tplId] ? ITEM_TEMPLATES[it.tplId].name : it.tplId));
       receivedNames.push(tplName); } });
     Game.save(); Render.inventory();
-    Toast.show(receivedNames.length ? `🤝 ได้รับ: ${receivedNames.join(', ')} เข้ากระเป๋า/สำรับแล้ว!` : 'การเทรดเสร็จสิ้น แต่กระเป๋า/สำรับเต็ม');
-    Net.sendTo(msg.from, {type:'trade_accept'});
+    const totalOffered = msg.cards.length+msg.items.length, totalAccepted = acceptedCardIdxs.length+acceptedItemIdxs.length;
+    if(!receivedNames.length){
+      Toast.show('การเทรดเสร็จสิ้น แต่กระเป๋า/สำรับเต็ม — ไม่ได้รับอะไรเลย');
+    } else if(totalAccepted < totalOffered){
+      Toast.show(`🤝 ได้รับ: ${receivedNames.join(', ')} — กระเป๋า/สำรับเต็มระหว่างทาง รับได้ ${totalAccepted}/${totalOffered} รายการ`);
+    } else {
+      Toast.show(`🤝 ได้รับ: ${receivedNames.join(', ')} เข้ากระเป๋า/สำรับแล้ว!`);
+    }
+    Net.sendTo(msg.from, {type:'trade_accept', acceptedCardIdxs, acceptedItemIdxs});
   }
 };
 
@@ -2915,8 +3047,8 @@ const Net = {
     }
     else if(data.type==='state_sync'){ Game.state.party[fromId] = Object.assign(Game.state.party[fromId]||{id:fromId}, data.state, {online:true}); if(UI.current==='demon-tower') Render.demonTower(); }
     else if(data.type==='trade_offer'){ Trade.handleIncomingOffer(data); }
-    else if(data.type==='trade_accept'){ Toast.show('คู่เทรดยอมรับข้อเสนอแล้ว'); }
-    else if(data.type==='trade_decline'){ Toast.show('คู่เทรดปฏิเสธข้อเสนอ'); }
+    else if(data.type==='trade_accept'){ Trade.finalizeSentOffer(fromId, data.acceptedCardIdxs, data.acceptedItemIdxs); Toast.show('คู่เทรดยอมรับข้อเสนอแล้ว'); }
+    else if(data.type==='trade_decline'){ delete Trade.pendingOffers[fromId]; Toast.show('คู่เทรดปฏิเสธข้อเสนอ'); }
     else if(data.type==='pvp_invite'){ Combat.onPvpInvited(fromId, data); }
     else if(data.type==='pvp_lock'){ Combat.onPvpOpponentLock(fromId, data); }
     else if(data.type==='coop_request_start'){
