@@ -706,8 +706,9 @@ const WEAPON_TIERS = {
 // Elements are mapped onto the game's existing 6-element system (fire/wood/water/light/dark/physical)
 // since that's what elemMultiplier() and monster generation understand:
 //   lightning->light, ice->water, wind->physical, soul/dark->dark, plant->wood
-// Each weapon grants passive stat bonuses while equipped, plus ONE unique ultimate card
-// that is added to the deck only while that weapon is equipped (removed if unequipped).
+// Each weapon grants passive stat bonuses while equipped, plus ONE unique ultimate move
+// that is used by tapping the weapon slot itself in combat (no separate card needed —
+// see getEquippedWeaponCard / Combat.useWeaponSkill).
 const GODLY_WEAPONS = [
   { id:'zeus_thunderbolt', name:'สายฟ้าแห่งราชันย์', nameEn:"Zeus's Thunderbolt", ic:'⚡', weaponType:'หอกสายฟ้า', element:'light',
     statBoost:{atk:10, luk:8},
@@ -1203,8 +1204,16 @@ const Game = {
       p.inventory = p.inventory || [];
       p.equipment = p.equipment && p.equipment.length===2 ? p.equipment : [null,null];
       p.deck = p.deck || [];
-      p.deckLimit = p.deckLimit || 3;
+      p.deckLimit = 3;
       p.weaponSlot = p.weaponSlot || null;
+      // MIGRATION: godly-weapon ultimates used to live as a locked, unplayable card
+      // in the deck ("ใช้ผ่านช่องอาวุธ"). They now live only on the weapon-slot
+      // button, so strip any leftover ultimate cards from older saves — this frees
+      // up the deck slot they used to occupy. Anyone who already unlocked the deck's
+      // 4th slot this way keeps it, since it's now just a normal card slot.
+      if(p.deck.some(c=>c && c.godTier)){
+        p.deck = p.deck.filter(c=>!(c && c.godTier));
+      }
       p.gachaSpins = typeof p.gachaSpins==='number' ? p.gachaSpins : 0;
       p.gold = typeof p.gold==='number' ? p.gold : 0;
       p.floorTraining = p.floorTraining || 1;
@@ -1524,7 +1533,9 @@ function grantWeapon(weaponId, tier){
           const newBoost = weaponStatBoostFor(existing, w);
           Object.keys(newBoost).forEach(k=>{ if(k==='hp'){ p.maxHp+=newBoost.hp; p.hp+=newBoost.hp; } else p[k]+=newBoost[k]; });
         }
-        Inventory.refreshUltimateCardPower(weaponId, existing.awaken, w);
+        // Ultimate power is derived live from weaponSlot.awaken every render (see
+        // getEquippedWeaponCard) instead of being cached on a separate deck card,
+        // so there's nothing extra to refresh here.
       }
       Game.save();
       LootPopup.push({ic:w.ic, tag:`✨ ปลุกพลังสำเร็จ! Tier ${existing.awaken}`, name:`${w.name} (${w.nameEn})`, msg:`ได้อาวุธเทพชิ้นซ้ำ — ปลุกพลังชิ้นเดิมขึ้นเป็น Tier ${existing.awaken}/${GODLY_AWAKEN_MAX}!`});
@@ -1540,8 +1551,7 @@ function grantWeapon(weaponId, tier){
   if(!p.weaponSlot){
     p.weaponSlot = item;
     if(w.statBoost) Object.keys(w.statBoost).forEach(k=>{ if(k==='hp'){ p.maxHp+=w.statBoost.hp; p.hp+=w.statBoost.hp; } else p[k]+=w.statBoost[k]; });
-    if(isGodly) Inventory.addUltimateCard(w, 1);
-    LootPopup.push({ic:w.ic, tag:gainTag, name:label, msg: isGodly ? 'สวมใส่เข้าช่องอาวุธทันที พร้อมปลดล็อกการ์ดท่าพิเศษ!' : `สวมใส่เข้าช่องอาวุธทันที! (PWR ${w.power})`});
+    LootPopup.push({ic:w.ic, tag:gainTag, name:label, msg: isGodly ? 'สวมใส่เข้าช่องอาวุธทันที — กดที่ช่องอาวุธในการต่อสู้เพื่อใช้ท่าไม้ตาย!' : `สวมใส่เข้าช่องอาวุธทันที! (PWR ${w.power})`});
   } else if(p.inventory.length < 10){
     p.inventory.push(item);
     LootPopup.push({ic:w.ic, tag:gainTag, name:label, msg:'ช่องอาวุธเต็มอยู่ — เก็บเข้ากระเป๋าแล้ว (ไปที่กระเป๋าเพื่อสวมใส่แทนอาวุธเดิม)'});
@@ -1871,15 +1881,15 @@ const Merchant = {
     Toast.show(`🪙 ขาย "${w?w.name:'อาวุธ'}" ได้ 10🪙`);
     this.renderSellList(); Render.hub();
   },
-  // Sells the weapon currently equipped in the weapon slot — unwinds its stat boosts and,
-  // for godly weapons, removes the ultimate card from the deck before clearing the slot.
+  // Sells the weapon currently equipped in the weapon slot — unwinds its stat boosts
+  // before clearing the slot. (Godly ultimates live only on the weapon-slot button,
+  // so there's no separate deck card to clean up here.)
   sellEquippedWeapon(){
     const p = Game.state.player; if(!p.weaponSlot) return;
     const w = getWeaponData(p.weaponSlot.tier, p.weaponSlot.weaponId);
     if(w){
       const boost = weaponStatBoostFor(p.weaponSlot, w);
       Object.keys(boost).forEach(k=>{ if(k==='hp'){ p.maxHp-=boost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=boost[k]; });
-      if(p.weaponSlot.tier==='godly') Inventory.removeUltimateCard(w.id);
     }
     p.weaponSlot = null; p.gold += 10; Game.save();
     Toast.show(`🪙 ขาย "${w?w.name:'อาวุธ'}" ได้ 10🪙`);
@@ -3132,14 +3142,16 @@ const Inventory = {
       if(oldW){
         const oldBoost = weaponStatBoostFor(oldSlot, oldW);
         Object.keys(oldBoost).forEach(k=>{ if(k==='hp'){ p.maxHp-=oldBoost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=oldBoost[k]; });
-        if(oldSlot.tier==='godly') Inventory.removeUltimateCard(oldW.id);
+        // Godly ultimates live entirely on the weapon slot now (no more separate deck
+        // card to remove when swapping weapons — see getEquippedWeaponCard).
       }
       p.inventory.push(oldSlot); // room is guaranteed since we just removed one item above
     }
     p.weaponSlot = item;
     const newBoost = weaponStatBoostFor(item, newW);
     Object.keys(newBoost).forEach(k=>{ if(k==='hp'){ p.maxHp+=newBoost.hp; p.hp+=newBoost.hp; } else p[k]+=newBoost[k]; });
-    if(item.tier==='godly') Inventory.addUltimateCard(newW, item.awaken||1);
+    // Godly weapons no longer touch the deck at all — their ultimate lives only on
+    // the weapon-slot button.
     Game.save();
     Toast.show(`⚔️ สวมใส่ "${newW.name}" แล้ว!`);
     UI.goto('inventory-screen');
@@ -3151,50 +3163,10 @@ const Inventory = {
     if(w){
       const boost = weaponStatBoostFor(p.weaponSlot, w);
       Object.keys(boost).forEach(k=>{ if(k==='hp'){ p.maxHp-=boost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=boost[k]; });
-      if(p.weaponSlot.tier==='godly') Inventory.removeUltimateCard(w.id);
     }
     p.inventory.push(p.weaponSlot);
     p.weaponSlot = null;
     Game.save(); Toast.show('📦 ถอดอาวุธเก็บเข้ากระเป๋าแล้ว'); UI.goto('inventory-screen');
-  },
-  addUltimateCard(w, awaken){
-    const p = Game.state.player;
-    awaken = awaken||1;
-    if(p.deckLimit<4) p.deckLimit = 4;
-    const card = { id:'ult_'+w.id, name:`${w.ultimate.name} (${w.name})`, element:w.element, power:getScaledUltimatePower(w,awaken),
-      desc:w.ultimate.desc, godTier:true, weaponId:w.id, cardEffect:w.ultimate.effect, cardEffectData:w.ultimate, awaken };
-    if(p.deck.length<p.deckLimit){
-      p.deck.push(card);
-      Toast.show(`🃏✨ ปลดล็อกการ์ดท่าพิเศษ "${w.ultimate.name}"!`);
-    } else {
-      Toast.show(`⚠️ สำรับเต็ม — ขายการ์ดบางใบเพื่อเปิดที่ให้การ์ดท่าพิเศษ`);
-    }
-  },
-  // Called when the currently-equipped godly weapon's tier goes up (via awakening a
-  // duplicate pull) — updates its ultimate card's power in place instead of removing
-  // and re-adding it, so the card doesn't jump around in the deck order.
-  refreshUltimateCardPower(weaponId, awaken, w){
-    const p = Game.state.player;
-    const card = p.deck.find(c=>c.weaponId===weaponId);
-    if(card){ card.power = getScaledUltimatePower(w, awaken); card.awaken = awaken; }
-  },
-  removeUltimateCard(weaponId){
-    const p = Game.state.player;
-    const idx = p.deck.findIndex(c=>c.weaponId===weaponId);
-    if(idx>=0) p.deck.splice(idx,1);
-  },
-
-  addGodWeapon(weaponName, elem){
-    const p = Game.state.player;
-    if(p.deckLimit<4) p.deckLimit = 4;
-    const card = {id:'god_'+Math.random().toString(36).slice(2,7), name:weaponName+'・การ์ดพิเศษ', element:elem, power:22,
-      desc:`อาวุธเทพ: โบนัสดาเมจธาตุ${ELEM_NAME[elem]} +50% และ LUK +50% เฉพาะการทอยนี้`, godTier:true};
-    if(p.deck.length<p.deckLimit){
-      p.deck.push(card);
-      Toast.show(`🃏✨ การ์ดพิเศษ "${card.name}" เข้าสำรับแล้ว! (ช่องที่ 4 ปลดล็อก)`);
-      LootPopup.push({ic:'🌟', tag:'อาวุธระดับเทพกรีก!', name:card.name, msg:'เข้าสำรับการ์ดแล้ว (ปลดล็อกช่องที่ 4 ทันที)'});
-    }
-    Game.save();
   }
 };
 
@@ -3584,4 +3556,4 @@ window.addEventListener('DOMContentLoaded', ()=>{
 window.addEventListener('beforeunload', ()=>{ if(Game.state && Game.state.player) Game.save(); });
 </script>
 </body>
-</html> 
+</html>
