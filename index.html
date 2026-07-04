@@ -81,6 +81,40 @@ input:focus{outline:1px solid var(--gold);}
 .weapon-slot-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px 12px;margin:6px 0;
   border-radius:4px;background:var(--bg-panel2);border:1px solid var(--line);font-size:13px;cursor:pointer;}
 .weapon-slot-btn:disabled{opacity:.45;cursor:default;}
+/* ===== Godly weapon skill button — element-specific ambient glow + shimmer sweep ===== */
+.weapon-slot-btn.godly{position:relative;overflow:hidden;border-width:2px;font-weight:700;z-index:1;}
+.weapon-slot-btn.godly::before{content:'';position:absolute;top:0;left:-60%;width:35%;height:100%;
+  background:linear-gradient(120deg,transparent,rgba(255,255,255,.55),transparent);
+  animation:godlySweep 2.4s linear infinite;pointer-events:none;}
+@keyframes godlySweep{0%{left:-60%;}100%{left:130%;}}
+.weapon-slot-btn.godly-fire{border-color:#ff6b4a;animation:godlyFirePulse 1.3s ease-in-out infinite;}
+@keyframes godlyFirePulse{0%,100%{box-shadow:0 0 8px rgba(255,107,74,.45),0 0 4px rgba(255,45,45,.3) inset;}50%{box-shadow:0 0 26px rgba(255,107,74,.9),0 0 42px rgba(255,45,45,.5);}}
+.weapon-slot-btn.godly-wood{border-color:#7ec850;animation:godlyWoodSway 3s ease-in-out infinite;}
+@keyframes godlyWoodSway{0%,100%{box-shadow:0 0 8px rgba(126,200,80,.4);}50%{box-shadow:0 0 22px rgba(200,232,106,.8);}}
+.weapon-slot-btn.godly-water{border-color:#4aa8ff;animation:godlyWaterRipple 2.6s ease-in-out infinite;}
+@keyframes godlyWaterRipple{0%,100%{box-shadow:0 0 8px rgba(74,168,255,.4),0 0 0 0 rgba(74,168,255,.3);}50%{box-shadow:0 0 24px rgba(143,227,255,.85),0 0 0 6px rgba(74,168,255,.12);}}
+.weapon-slot-btn.godly-light{border-color:#fff2b8;animation:godlyLightShine 1.7s ease-in-out infinite;}
+@keyframes godlyLightShine{0%,100%{box-shadow:0 0 10px rgba(255,242,184,.5),0 0 20px rgba(255,255,255,.2);}50%{box-shadow:0 0 32px rgba(255,242,184,1),0 0 55px rgba(255,255,255,.65);}}
+.weapon-slot-btn.godly-dark{border-color:#8b5cf6;animation:godlyDarkSwirl 2.1s ease-in-out infinite;}
+@keyframes godlyDarkSwirl{0%,100%{box-shadow:0 0 8px rgba(139,92,246,.45),0 0 18px rgba(20,8,40,.55) inset;}50%{box-shadow:0 0 30px rgba(139,92,246,.95),0 0 32px rgba(8,4,16,.75) inset;}}
+.weapon-slot-btn.godly-physical{border-color:#c9c3d6;animation:godlyPhysicalGleam 1.5s ease-in-out infinite;}
+@keyframes godlyPhysicalGleam{0%,100%{box-shadow:0 0 8px rgba(201,195,214,.4);}50%{box-shadow:0 0 28px rgba(255,255,255,.9);}}
+/* ===== Godly weapon full-screen burst FX (spawned on click, removed after ~1.1s) ===== */
+.godly-fx-overlay{position:fixed;inset:0;z-index:9999;pointer-events:none;overflow:hidden;}
+.godly-fx-flash{position:absolute;inset:0;animation:godlyFxFlash .55s ease-out forwards;}
+@keyframes godlyFxFlash{from{opacity:1;}to{opacity:0;}}
+.godly-fx-rays{position:absolute;top:50%;left:50%;width:140vmax;height:140vmax;margin:-70vmax 0 0 -70vmax;border-radius:50%;animation:godlyFxRays 1s ease-out forwards;}
+@keyframes godlyFxRays{from{transform:scale(.12) rotate(0deg);opacity:1;}to{transform:scale(1) rotate(35deg);opacity:0;}}
+.godly-fx-particle{position:absolute;top:50%;left:50%;border-radius:50%;animation:godlyFxParticle .9s ease-out forwards;}
+@keyframes godlyFxParticle{0%{transform:translate(-50%,-50%) scale(1);opacity:1;}100%{transform:translate(calc(-50% + var(--tx)),calc(-50% + var(--ty))) scale(.15);opacity:0;}}
+.godly-fx-ring{position:absolute;top:50%;left:50%;border:3px solid;border-radius:50%;transform:translate(-50%,-50%);animation:godlyFxRing 1s ease-out forwards;}
+@keyframes godlyFxRing{from{width:0;height:0;opacity:.9;}to{width:80vmax;height:80vmax;opacity:0;}}
+.godly-fx-beam{position:absolute;top:50%;left:50%;width:3px;height:60vmax;transform-origin:top center;animation:godlyFxBeamFade 1s ease-out forwards;}
+@keyframes godlyFxBeamFade{from{opacity:.85;}to{opacity:0;}}
+.godly-fx-slash{position:absolute;top:50%;left:50%;height:4px;border-radius:2px;transform-origin:left center;animation:godlyFxSlash .5s ease-out forwards;}
+@keyframes godlyFxSlash{0%{width:0;opacity:1;}60%{width:70vmax;opacity:1;}100%{width:90vmax;opacity:0;}}
+.godly-shake{animation:godlyShake .4s ease;}
+@keyframes godlyShake{0%,100%{transform:translateX(0);}20%{transform:translateX(-6px) rotate(-.3deg);}40%{transform:translateX(5px) rotate(.3deg);}60%{transform:translateX(-4px);}80%{transform:translateX(3px);}}
 .card{border:1px solid var(--line);border-radius:8px;padding:10px;margin:6px 0;background:
   linear-gradient(160deg,var(--bg-panel2),var(--bg-panel));cursor:pointer;position:relative;}
 .card:active{transform:scale(.98);}
@@ -131,6 +165,10 @@ input:focus{outline:1px solid var(--gold);}
 .badge.common{border-color:var(--physical);color:var(--physical);} .badge.uncommon{border-color:var(--wood);color:var(--wood);}
 .badge.rare{border-color:var(--water);color:var(--water);} .badge.epic{border-color:var(--dark);color:var(--dark);}
 .badge.god{border-color:var(--gold);color:var(--gold);background:rgba(232,182,76,.08);}
+.badge.awaken-badge{margin-left:5px;border-color:transparent;color:#3a2408;font-weight:800;
+  background:linear-gradient(120deg,#ffe066,#e8b64c,#fff2b8,#e8b64c);background-size:220% 100%;
+  animation:awakenShimmer 2.4s linear infinite;box-shadow:0 0 8px rgba(232,182,76,.55);}
+@keyframes awakenShimmer{0%{background-position:0% 50%;}100%{background-position:220% 50%;}}
 .weapon-slot{border:2px solid var(--gold);border-radius:8px;padding:12px;margin:10px 0;cursor:pointer;
   background:linear-gradient(160deg,rgba(232,182,76,.12),var(--bg-panel));display:flex;align-items:center;gap:12px;}
 .weapon-slot.empty{opacity:.4;border-style:dashed;border-color:var(--line);background:var(--bg-panel2);}
@@ -713,6 +751,34 @@ const GODLY_WEAPONS = [
     ultimate:{ name:'Time Collapse', power:22, desc:'บิดเบือนเวลา — ทุกๆ 2 ครั้งที่การ์ดนี้โจมตีติด จะฟื้นฟู HP ทันที 25% ของ HP สูงสุด', effect:'heal_every_2' } },
 ];
 function getGodlyWeapon(id){ return GODLY_WEAPONS.find(w=>w.id===id); }
+/* ---------------------------------- 1c-2. GODLY AWAKENING SYSTEM ---------------------------------- */
+// Pulling a duplicate Godly weapon from the gacha no longer wastes the pull as a bag item:
+// it "awakens" the copy the player already owns, permanently boosting its stats/ultimate
+// power. Tier 1 (first copy) -> Tier 10 (9 duplicates absorbed) is the max. Each tier above
+// 1 adds +12% to the weapon's base statBoost and ultimate power (Tier10 ≈ +108% / 2.08x).
+const GODLY_AWAKEN_MAX = 10;
+const GODLY_AWAKEN_STEP = 0.12;
+function getAwakenMult(awaken){ return 1 + (Math.max(1,awaken||1)-1) * GODLY_AWAKEN_STEP; }
+// Scales a godly weapon's flat statBoost object by its current awaken tier. Non-godly
+// items should just use w.statBoost directly (this helper is only meaningful for godly).
+function getScaledStatBoost(w, awaken){
+  const mult = getAwakenMult(awaken), out = {};
+  Object.keys(w.statBoost||{}).forEach(k=>{ out[k] = Math.round(w.statBoost[k]*mult); });
+  return out;
+}
+function getScaledUltimatePower(w, awaken){ return Math.round(w.ultimate.power * getAwakenMult(awaken)); }
+// Single point of truth for "what statBoost object should currently be applied/unwound for
+// this equipped/bagged weapon item" — handles the godly-vs-plain distinction so every equip/
+// unequip/sell call site stays consistent instead of re-deriving the scaling by hand.
+function weaponStatBoostFor(item, w){
+  if(!w || !w.statBoost) return {};
+  if(item && item.tier==='godly') return getScaledStatBoost(w, item.awaken||1);
+  return w.statBoost;
+}
+const STAT_LABEL = {atk:'ATK', mag:'MAG', luk:'LUK', hp:'HP สูงสุด'};
+function formatStatBoostLine(boost){
+  return Object.keys(boost).map(k=>`${STAT_LABEL[k]||k.toUpperCase()} +${boost[k]}`).join(' · ') || '-';
+}
 
 /* ---------------------------------- 1d. COMMON / RARE / EPIC WEAPONS (54) ---------------------------------- */
 // Plain equippable weapons with NO ultimate card / no special move — just a passive stat
@@ -793,11 +859,81 @@ function getWeaponData(tier, id){
   const pool = TIER_WEAPONS[tier];
   return pool ? pool.find(w=>w.id===id) : null;
 }
+// ============================================================
+// GODLY WEAPON VISUAL FX — full-screen burst played only when a Godly-tier weapon
+// skill is used. Each element gets its own color palette AND its own shape language
+// (sunburst beams for Light, ripple rings for Water, slash lines for Physical,
+// rotating burst rays for Fire/Wood/Dark) so all six feel distinct, not just re-tinted.
+const GODLY_FX_PALETTE = {
+  fire:    {main:'#ff6b4a', colors:['#ff6b4a','#ffb347','#ff2d2d','#ffe066'], shake:true},
+  wood:    {main:'#7ec850', colors:['#7ec850','#c8e86a','#3f7d2c','#e8ffb0'], shake:false},
+  water:   {main:'#4aa8ff', colors:['#4aa8ff','#8fe3ff','#1a5fb4','#d6f3ff'], shake:false},
+  light:   {main:'#fff2b8', colors:['#fff2b8','#ffe066','#ffffff','#ffd76b'], shake:false},
+  dark:    {main:'#8b5cf6', colors:['#8b5cf6','#4b2e83','#c9a6ff','#1a0d2e'], shake:true},
+  physical:{main:'#c9c3d6', colors:['#c9c3d6','#ffffff','#8b8698','#e8e5ee'], shake:true}
+};
+const GodlyFX = {
+  play(element){
+    const pal = GODLY_FX_PALETTE[element] || GODLY_FX_PALETTE.physical;
+    const ov = document.createElement('div'); ov.className = 'godly-fx-overlay';
+    document.body.appendChild(ov);
+    const flash = document.createElement('div'); flash.className = 'godly-fx-flash';
+    flash.style.background = `radial-gradient(circle at 50% 50%, ${pal.colors[2]}cc 0%, ${pal.main}66 18%, transparent 60%)`;
+    ov.appendChild(flash);
+    if(element==='light'){
+      for(let i=0;i<12;i++){
+        const beam = document.createElement('div'); beam.className = 'godly-fx-beam';
+        beam.style.background = `linear-gradient(to bottom, ${pal.colors[2]}, transparent)`;
+        beam.style.transform = `translate(-50%,0) rotate(${i*30}deg)`;
+        ov.appendChild(beam);
+      }
+    } else if(element==='water'){
+      for(let i=0;i<3;i++){
+        const ring = document.createElement('div'); ring.className = 'godly-fx-ring';
+        ring.style.borderColor = pal.colors[i%pal.colors.length];
+        ring.style.animationDelay = (i*0.15)+'s';
+        ov.appendChild(ring);
+      }
+    } else if(element==='physical'){
+      for(let i=0;i<2;i++){
+        const slash = document.createElement('div'); slash.className = 'godly-fx-slash';
+        slash.style.background = `linear-gradient(90deg, transparent, ${pal.colors[1]}, transparent)`;
+        slash.style.transform = `translate(-50%,-50%) rotate(${i===0?-25:20}deg)`;
+        slash.style.animationDelay = (i*0.08)+'s';
+        ov.appendChild(slash);
+      }
+    } else {
+      const rays = document.createElement('div'); rays.className = 'godly-fx-rays';
+      rays.style.background = `conic-gradient(from 0deg, ${pal.main}55 0deg 10deg, transparent 10deg 30deg, ${pal.colors[1]}44 30deg 40deg, transparent 40deg 60deg)`;
+      ov.appendChild(rays);
+    }
+    const count = element==='light' ? 20 : 16;
+    for(let i=0;i<count;i++){
+      const p = document.createElement('div'); p.className = 'godly-fx-particle';
+      const angle = (Math.PI*2*i/count) + Math.random()*0.3;
+      const dist = 100 + Math.random()*180;
+      p.style.setProperty('--tx', Math.cos(angle)*dist+'px');
+      p.style.setProperty('--ty', Math.sin(angle)*dist+'px');
+      const size = element==='dark' ? 10+Math.random()*6 : 5+Math.random()*5;
+      p.style.width = size+'px'; p.style.height = size+'px';
+      p.style.background = pal.colors[i%pal.colors.length];
+      p.style.boxShadow = `0 0 8px 2px ${pal.colors[i%pal.colors.length]}`;
+      p.style.animationDelay = (Math.random()*0.12)+'s';
+      if(element==='wood') p.style.borderRadius = '2px';
+      ov.appendChild(p);
+    }
+    if(pal.shake){
+      const app = document.getElementById('app');
+      if(app){ app.classList.add('godly-shake'); setTimeout(()=>app.classList.remove('godly-shake'), 420); }
+    }
+    setTimeout(()=>ov.remove(), 1100);
+  }
+};
 // Builds a generic "weapon card" object out of whatever weapon is currently equipped in
 // p.weaponSlot, usable identically by Solo Combat, real-time PvP, and Co-op combat. Godly
-// weapons carry their unique ultimate name/power/effect and get 1 use per fight/match;
+// weapons carry their unique ultimate name/power/effect and get 3 uses per fight/match;
 // any other equipped weapon (common/rare/epic) attacks with its own element/power and gets
-// 3 uses per fight/match. Returns null if no weapon is equipped.
+// 2 uses per fight/match. Returns null if no weapon is equipped.
 function getEquippedWeaponCard(p){
   p = p || Game.state.player;
   if(!p || !p.weaponSlot) return null;
@@ -805,10 +941,11 @@ function getEquippedWeaponCard(p){
   const w = getWeaponData(tier, p.weaponSlot.weaponId);
   if(!w) return null;
   if(tier==='godly'){
-    return { tier, maxUses:1, name:w.ultimate.name, element:w.element, power:w.ultimate.power, ic:w.ic,
-      desc:w.ultimate.desc, weaponId:w.id, cardEffect:w.ultimate.effect, cardEffectData:w.ultimate };
+    const awaken = p.weaponSlot.awaken||1;
+    return { tier, maxUses:3, name:w.ultimate.name, element:w.element, power:getScaledUltimatePower(w,awaken), ic:w.ic,
+      desc:w.ultimate.desc, weaponId:w.id, cardEffect:w.ultimate.effect, cardEffectData:w.ultimate, awaken };
   }
-  return { tier, maxUses:3, name:w.name, element:w.element, power:w.power, ic:w.ic,
+  return { tier, maxUses:2, name:w.name, element:w.element, power:w.power, ic:w.ic,
     desc:`โจมตีธาตุ${ELEM_NAME[w.element]}ด้วยอาวุธที่สวมใส่อยู่ (ไม่มีท่าไม้ตายพิเศษ)` };
 }
 
@@ -1353,20 +1490,57 @@ function grantLoot(tplId, qty){
 /* Grants a named godly weapon (see GODLY_WEAPONS). Always notifies via LootPopup.
    Goes straight into the dedicated 1-slot weapon holder if it's empty; otherwise
    falls back into the regular 10-slot bag (as an unequipped weapon item) so nothing
-   is ever silently lost unless both are full. */
+   is ever silently lost unless both are full.
+   GODLY AWAKENING: if the player already owns a copy of this exact godly weapon
+   (equipped or in the bag), the "duplicate" isn't added as a second item — instead it
+   awakens the existing copy by +1 tier (max Tier 10), permanently scaling up its stats
+   and ultimate power. If already at Tier 10, the duplicate is converted to gold instead. */
 function grantWeapon(weaponId, tier){
   tier = tier || 'godly';
   const p = Game.state.player, w = getWeaponData(tier, weaponId);
   if(!p || !w) return false;
-  const item = {isWeapon:true, weaponId, tier};
   const isGodly = tier==='godly';
+  if(isGodly){
+    const existing = (p.weaponSlot && p.weaponSlot.tier==='godly' && p.weaponSlot.weaponId===weaponId) ? p.weaponSlot
+      : p.inventory.find(it=>it && it.isWeapon && it.tier==='godly' && it.weaponId===weaponId);
+    if(existing){
+      const curAwaken = existing.awaken||1;
+      if(curAwaken>=GODLY_AWAKEN_MAX){
+        p.gold += 50;
+        Game.save();
+        LootPopup.push({ic:w.ic, tag:'🌟 อาวุธเทพ Tier สูงสุด!', name:`${w.name} (${w.nameEn})`, msg:`ปลุกพลังครบ Tier ${GODLY_AWAKEN_MAX} แล้ว — ได้รับทองคำชดเชย 50🪙 แทน`});
+        return true;
+      }
+      const isEquipped = existing===p.weaponSlot;
+      if(isEquipped && w.statBoost){
+        // Unwind the old (lower-tier) stat boost, then reapply at the new tier so the
+        // player's live stats stay perfectly in sync with the weapon's current tier.
+        const oldBoost = weaponStatBoostFor(existing, w);
+        Object.keys(oldBoost).forEach(k=>{ if(k==='hp'){ p.maxHp-=oldBoost.hp; p.hp=Math.min(p.hp,p.maxHp); } else p[k]-=oldBoost[k]; });
+      }
+      existing.awaken = curAwaken+1;
+      if(isEquipped){
+        if(w.statBoost){
+          const newBoost = weaponStatBoostFor(existing, w);
+          Object.keys(newBoost).forEach(k=>{ if(k==='hp'){ p.maxHp+=newBoost.hp; p.hp+=newBoost.hp; } else p[k]+=newBoost[k]; });
+        }
+        Inventory.refreshUltimateCardPower(weaponId, existing.awaken, w);
+      }
+      Game.save();
+      LootPopup.push({ic:w.ic, tag:`✨ ปลุกพลังสำเร็จ! Tier ${existing.awaken}`, name:`${w.name} (${w.nameEn})`, msg:`ได้อาวุธเทพชิ้นซ้ำ — ปลุกพลังชิ้นเดิมขึ้นเป็น Tier ${existing.awaken}/${GODLY_AWAKEN_MAX}!`});
+      Toast.show(`✨ ${w.name} ปลุกพลังขึ้นเป็น Tier ${existing.awaken}!`);
+      return true;
+    }
+  }
+  const item = {isWeapon:true, weaponId, tier};
+  if(isGodly) item.awaken = 1;
   const label = isGodly ? `${w.name} (${w.nameEn})` : w.name;
   const tierLabel = (WEAPON_TIERS[tier]||{}).label || tier;
   const gainTag = isGodly ? '⚔️ ได้รับอาวุธระดับเทพ!' : `⚔️ ได้รับอาวุธ ${tierLabel}!`;
   if(!p.weaponSlot){
     p.weaponSlot = item;
     if(w.statBoost) Object.keys(w.statBoost).forEach(k=>{ if(k==='hp'){ p.maxHp+=w.statBoost.hp; p.hp+=w.statBoost.hp; } else p[k]+=w.statBoost[k]; });
-    if(isGodly) Inventory.addUltimateCard(w);
+    if(isGodly) Inventory.addUltimateCard(w, 1);
     LootPopup.push({ic:w.ic, tag:gainTag, name:label, msg: isGodly ? 'สวมใส่เข้าช่องอาวุธทันที พร้อมปลดล็อกการ์ดท่าพิเศษ!' : `สวมใส่เข้าช่องอาวุธทันที! (PWR ${w.power})`});
   } else if(p.inventory.length < 10){
     p.inventory.push(item);
@@ -1504,9 +1678,10 @@ const Render = {
     if(p.weaponSlot){
       const w = getWeaponData(p.weaponSlot.tier, p.weaponSlot.weaponId);
       const tierInfo = WEAPON_TIERS[p.weaponSlot.tier]||WEAPON_TIERS.godly;
+      const awakenBadge = (p.weaponSlot.tier==='godly') ? `<span class="badge awaken-badge">✦ Tier ${p.weaponSlot.awaken||1}/${GODLY_AWAKEN_MAX}</span>` : '';
       wb.innerHTML = `<div class="weapon-slot" onclick="Inventory.openWeaponSlotDetail()">
         <div class="wic">${w?w.ic:'⚔️'}</div><div><div class="wtitle">${w?w.name:'อาวุธ'}</div>
-        <span class="badge ${tierInfo.cls}">${tierInfo.label}</span></div></div>`;
+        <span class="badge ${tierInfo.cls}">${tierInfo.label}</span>${awakenBadge}</div></div>`;
     } else {
       wb.innerHTML = `<div class="weapon-slot empty"><div class="wic">🗡️</div><div class="small-text">ช่องอาวุธว่าง — ได้อาวุธระดับเทพจากกาชาแล้วจะเข้าช่องนี้อัตโนมัติ</div></div>`;
     }
@@ -1702,7 +1877,8 @@ const Merchant = {
     const p = Game.state.player; if(!p.weaponSlot) return;
     const w = getWeaponData(p.weaponSlot.tier, p.weaponSlot.weaponId);
     if(w){
-      if(w.statBoost) Object.keys(w.statBoost).forEach(k=>{ if(k==='hp'){ p.maxHp-=w.statBoost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=w.statBoost[k]; });
+      const boost = weaponStatBoostFor(p.weaponSlot, w);
+      Object.keys(boost).forEach(k=>{ if(k==='hp'){ p.maxHp-=boost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=boost[k]; });
       if(p.weaponSlot.tier==='godly') Inventory.removeUltimateCard(w.id);
     }
     p.weaponSlot = null; p.gold += 10; Game.save();
@@ -1747,9 +1923,9 @@ const Combat = {
     const buffAtk = p._pendingBuffAtk || 0;
     const buffLuk = p._pendingBuffLuk || 0;
     p._pendingBuffAtk = 0; p._pendingBuffLuk = 0;
-    // Weapon-card uses for this fight only: Godly weapons get exactly 1 use per fight
+    // Weapon-card uses for this fight only: Godly weapons get exactly 3 uses per fight
     // (resets fully next fight since this.active is rebuilt from scratch here),
-    // non-Godly equipped weapons get 3 uses per fight. No weapon equipped -> 0.
+    // non-Godly equipped weapons get 2 uses per fight. No weapon equipped -> 0.
     const equippedWc = getEquippedWeaponCard(p);
     const weaponMaxUses = equippedWc ? equippedWc.maxUses : 0;
     this.active = { mode, floor, monster, guaranteedLootGiven:false, buffAtk, buffLuk, turnsElapsed:0, godHitCounts:{}, guaranteedSuccess:false,
@@ -1824,8 +2000,8 @@ const Combat = {
   },
   // Weapon slot — now doubles as an actual "weapon card" that can be tapped to attack.
   // The attack always uses that weapon's own element + power (and, for Godly weapons,
-  // its unique ultimate effect). Godly weapons: 1 use per fight. Any other equipped
-  // weapon (common/rare/epic): 3 uses per fight. Uses reset fully at the start of the
+  // its unique ultimate effect). Godly weapons: 3 uses per fight. Any other equipped
+  // weapon (common/rare/epic): 2 uses per fight. Uses reset fully at the start of the
   // next fight (see beginFight). Empty/disabled if no weapon is equipped.
   renderWeaponSlot(){
     const el = document.getElementById('combat-weapon-slot'); if(!el) return;
@@ -1838,8 +2014,7 @@ const Combat = {
     const usesLeft = this.active ? (this.active.weaponUsesLeft||0) : maxUses;
     const busy = !!(this.active && this.active._weaponBusy);
     const disabled = busy || usesLeft<=0;
-    el.innerHTML = `<button class="weapon-slot-btn" style="border-color:var(--${wc.element});flex-direction:column;align-items:flex-start;gap:2px;"
-        title="${wc.desc}" ${disabled?'disabled':''} onclick="Combat.useWeaponSkill()">
+    el.innerHTML = `<button class="weapon-slot-btn ${wc.tier==='godly'?'godly godly-'+wc.element:''}" style="border-color:var(--${wc.element});flex-direction:column;align-items:flex-start;gap:2px;"
       <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
         <span>${wc.ic} ${wc.name}</span>
         <span class="elem-tag ${ELEM_CLASS[wc.element]}" style="margin-left:6px;">${ELEM_NAME[wc.element]}</span>
@@ -1858,6 +2033,7 @@ const Combat = {
     if(!wc){ Toast.show('ยังไม่มีอาวุธติดตั้ง'); return; }
     this.active._weaponBusy = true;
     this.active.weaponUsesLeft--;
+    if(wc.tier==='godly') GodlyFX.play(wc.element);
     this.activateElementTint(wc.element);
     this.renderWeaponSlot();
     this.confirmCard(wc);
@@ -2294,8 +2470,8 @@ const Combat = {
     document.getElementById('btn-pvp-lock').disabled = pv.mySelIndex===undefined || pv.mySelIndex===null || !!pv.mySel;
     this.renderPvpWeaponSlot();
   },
-  // Weapon-card slot for PvP duels — same rules as Solo Combat: Godly weapons get 1 use
-  // per duel, any other equipped weapon gets 3 uses per duel. Ultimate special effects
+  // Weapon-card slot for PvP duels — same rules as Solo Combat: Godly weapons get 3 uses
+  // per duel, any other equipped weapon gets 2 uses per duel. Ultimate special effects
   // (crit/lifesteal/execute/etc.) aren't replayed here — only base element/power — same
   // simplification used in Co-op combat, since PvP resolution is a simple simultaneous
   // dice-off rather than the single-player effect engine.
@@ -2306,7 +2482,7 @@ const Combat = {
     if(!wc){ el.innerHTML = `<button class="weapon-slot-btn" disabled>🗡️ ไม่มีอาวุธติดตั้ง</button>`; return; }
     const usesLeft = pv.weaponUsesLeft||0;
     const disabled = !!pv.mySel || usesLeft<=0;
-    el.innerHTML = `<button class="weapon-slot-btn" style="border-color:var(--${wc.element});flex-direction:column;align-items:flex-start;gap:2px;"
+    el.innerHTML = `<button class="weapon-slot-btn ${wc.tier==='godly'?'godly godly-'+wc.element:''}" style="border-color:var(--${wc.element});flex-direction:column;align-items:flex-start;gap:2px;"
         title="${wc.desc}" ${disabled?'disabled':''} onclick="Combat.usePvpWeaponSkill()">
       <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
         <span>${wc.ic} ${wc.name}</span>
@@ -2347,6 +2523,7 @@ const Combat = {
     const wc = getEquippedWeaponCard();
     if(!wc){ Toast.show('ยังไม่มีอาวุธติดตั้ง'); return; }
     pv.weaponUsesLeft--;
+    if(wc.tier==='godly') GodlyFX.play(wc.element);
     this._lockPvpAction({ name:wc.name, element:wc.element, power:wc.power });
   },
   onPvpOpponentLock(fromId, data){
@@ -2506,8 +2683,8 @@ const CoopCombat = {
     if(Net.isHost) this.resolveTurn(Net.peerId, cardIndex, false, false);
     else Net.sendTo(Net.hostId, {type:'coop_action', turnId:st.turnId, actorId:Net.peerId, cardIndex});
   },
-  // Weapon-card slot for co-op — same rules as Solo/PvP: Godly weapons get 1 use per fight,
-  // any other equipped weapon gets 3 uses per fight. Only base element/power is used (no
+  // Weapon-card slot for co-op — same rules as Solo/PvP: Godly weapons get 3 uses per fight,
+  // any other equipped weapon gets 2 uses per fight. Only base element/power is used (no
   // ultimate special effects), matching the existing co-op simplification.
   useWeaponSkill(){
     const st = this.active; if(!st || st.locked) return;
@@ -2515,6 +2692,7 @@ const CoopCombat = {
     if(!cur || cur.id!==Net.peerId) return;
     if(!cur.weapon){ Toast.show('ยังไม่มีอาวุธติดตั้ง'); return; }
     if((cur.weaponUsesLeft||0) <= 0){ Toast.show('ใช้การ์ดอาวุธนี้ครบจำนวนครั้งแล้วในการต่อสู้นี้'); return; }
+    if(cur.weapon.tier==='godly') GodlyFX.play(cur.weapon.element);
     st.locked = true;
     const previewName = `${cur.weapon.name} (อาวุธ)`;
     st.preview[Net.peerId] = previewName;
@@ -2703,7 +2881,7 @@ const CoopCombat = {
       const myElemCoop = playerElement(p);
       const wc = cur.weapon;
       const weaponUsesLeft = cur.weaponUsesLeft||0;
-      const weaponHtml = wc ? `<button class="weapon-slot-btn" style="border-color:var(--${wc.element});flex-direction:column;align-items:flex-start;gap:2px;"
+      const weaponHtml = wc ? `<button class="weapon-slot-btn ${wc.tier==='godly'?'godly godly-'+wc.element:''}" style="border-color:var(--${wc.element});flex-direction:column;align-items:flex-start;gap:2px;"
           title="${wc.desc}" ${weaponUsesLeft<=0?'disabled':''} onclick="CoopCombat.useWeaponSkill()">
         <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
           <span>${wc.ic} ${wc.name}</span>
@@ -2905,13 +3083,18 @@ const Inventory = {
     const w = getWeaponData(item.tier, item.weaponId); if(!w) return;
     const tierInfo = WEAPON_TIERS[item.tier]||WEAPON_TIERS.godly;
     const isGodly = item.tier==='godly';
+    const awaken = item.awaken||1;
+    const awakenBadge = isGodly ? `<span class="badge awaken-badge">✦ Tier ${awaken}/${GODLY_AWAKEN_MAX}</span>` : '';
+    const statLine = isGodly ? formatStatBoostLine(getScaledStatBoost(w,awaken)) : '';
     document.getElementById('weapon-detail-body').innerHTML = `
       <div class="panel center"><div style="font-size:44px;">${w.ic}</div>
-        <span class="badge ${tierInfo.cls}">${tierInfo.label}</span>
+        <span class="badge ${tierInfo.cls}">${tierInfo.label}</span>${awakenBadge}
         <h3>${w.name}</h3><p class="small-text">${isGodly ? (w.nameEn+' · '+w.weaponType) : ('PWR '+w.power)}</p>
         <div class="elem-tag ${ELEM_CLASS[w.element]}" style="display:inline-block;margin:6px 0;">${ELEM_NAME[w.element]}</div>
         <p class="small-text">${isGodly ? w.passiveDesc : w.desc}</p>
-        ${isGodly ? `<div class="divider"></div><p class="small-text"><b>ท่าไม้ตาย:</b> ${w.ultimate.name}<br>${w.ultimate.desc}</p>` : ''}
+        ${isGodly ? `<p class="small-text"><b>โบนัสสถานะ (Tier ${awaken}):</b> ${statLine}</p>` : ''}
+        ${isGodly ? `<div class="divider"></div><p class="small-text"><b>ท่าไม้ตาย (PWR ${getScaledUltimatePower(w,awaken)}):</b> ${w.ultimate.name}<br>${w.ultimate.desc}</p>` : ''}
+        ${isGodly && awaken<GODLY_AWAKEN_MAX ? `<p class="small-text" style="color:var(--gold);">💡 สุ่มอาวุธนี้ซ้ำจากกาชาเพื่อปลุกพลังต่อได้อีก!</p>` : ''}
         <button class="btn primary" onclick="Inventory.equipWeapon(${i})">⚔️ สวมใส่อาวุธนี้</button>
         <button class="btn" onclick="Inventory.drop(${i})">🗑️ ทิ้ง</button>
       </div>`;
@@ -2922,13 +3105,18 @@ const Inventory = {
     const w = getWeaponData(p.weaponSlot.tier, p.weaponSlot.weaponId); if(!w) return;
     const tierInfo = WEAPON_TIERS[p.weaponSlot.tier]||WEAPON_TIERS.godly;
     const isGodly = p.weaponSlot.tier==='godly';
+    const awaken = p.weaponSlot.awaken||1;
+    const awakenBadge = isGodly ? `<span class="badge awaken-badge">✦ Tier ${awaken}/${GODLY_AWAKEN_MAX}</span>` : '';
+    const statLine = isGodly ? formatStatBoostLine(getScaledStatBoost(w,awaken)) : '';
     document.getElementById('weapon-detail-body').innerHTML = `
       <div class="panel center"><div style="font-size:44px;">${w.ic}</div>
-        <span class="badge ${tierInfo.cls}">${tierInfo.label}</span>
+        <span class="badge ${tierInfo.cls}">${tierInfo.label}</span>${awakenBadge}
         <h3>${w.name} <span class="small-text">(สวมใส่อยู่)</span></h3><p class="small-text">${isGodly ? (w.nameEn+' · '+w.weaponType) : ('PWR '+w.power)}</p>
         <div class="elem-tag ${ELEM_CLASS[w.element]}" style="display:inline-block;margin:6px 0;">${ELEM_NAME[w.element]}</div>
         <p class="small-text">${isGodly ? w.passiveDesc : w.desc}</p>
-        ${isGodly ? `<div class="divider"></div><p class="small-text"><b>ท่าไม้ตาย (อยู่ในสำรับแล้ว):</b> ${w.ultimate.name}<br>${w.ultimate.desc}</p>` : ''}
+        ${isGodly ? `<p class="small-text"><b>โบนัสสถานะ (Tier ${awaken}):</b> ${statLine}</p>` : ''}
+        ${isGodly ? `<div class="divider"></div><p class="small-text"><b>ท่าไม้ตาย (PWR ${getScaledUltimatePower(w,awaken)}):</b> ${w.ultimate.name}<br>${w.ultimate.desc}</p>` : ''}
+        ${isGodly && awaken<GODLY_AWAKEN_MAX ? `<p class="small-text" style="color:var(--gold);">💡 สุ่มอาวุธนี้ซ้ำจากกาชาเพื่อปลุกพลังต่อได้อีก!</p>` : ''}
         <button class="btn" onclick="Inventory.unequipWeapon()">📦 ถอดเก็บเข้ากระเป๋า</button>
       </div>`;
     UI.goto('weapon-detail');
@@ -2941,14 +3129,16 @@ const Inventory = {
     if(oldSlot){
       const oldW = getWeaponData(oldSlot.tier, oldSlot.weaponId);
       if(oldW){
-        if(oldW.statBoost) Object.keys(oldW.statBoost).forEach(k=>{ if(k==='hp'){ p.maxHp-=oldW.statBoost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=oldW.statBoost[k]; });
+        const oldBoost = weaponStatBoostFor(oldSlot, oldW);
+        Object.keys(oldBoost).forEach(k=>{ if(k==='hp'){ p.maxHp-=oldBoost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=oldBoost[k]; });
         if(oldSlot.tier==='godly') Inventory.removeUltimateCard(oldW.id);
       }
       p.inventory.push(oldSlot); // room is guaranteed since we just removed one item above
     }
     p.weaponSlot = item;
-    if(newW.statBoost) Object.keys(newW.statBoost).forEach(k=>{ if(k==='hp'){ p.maxHp+=newW.statBoost.hp; p.hp+=newW.statBoost.hp; } else p[k]+=newW.statBoost[k]; });
-    if(item.tier==='godly') Inventory.addUltimateCard(newW);
+    const newBoost = weaponStatBoostFor(item, newW);
+    Object.keys(newBoost).forEach(k=>{ if(k==='hp'){ p.maxHp+=newBoost.hp; p.hp+=newBoost.hp; } else p[k]+=newBoost[k]; });
+    if(item.tier==='godly') Inventory.addUltimateCard(newW, item.awaken||1);
     Game.save();
     Toast.show(`⚔️ สวมใส่ "${newW.name}" แล้ว!`);
     UI.goto('inventory-screen');
@@ -2958,24 +3148,34 @@ const Inventory = {
     if(p.inventory.length>=10){ Toast.show('กระเป๋าเต็ม ถอดไม่ได้'); return; }
     const w = getWeaponData(p.weaponSlot.tier, p.weaponSlot.weaponId);
     if(w){
-      if(w.statBoost) Object.keys(w.statBoost).forEach(k=>{ if(k==='hp'){ p.maxHp-=w.statBoost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=w.statBoost[k]; });
+      const boost = weaponStatBoostFor(p.weaponSlot, w);
+      Object.keys(boost).forEach(k=>{ if(k==='hp'){ p.maxHp-=boost.hp; p.hp=Math.min(p.hp,p.maxHp);} else p[k]-=boost[k]; });
       if(p.weaponSlot.tier==='godly') Inventory.removeUltimateCard(w.id);
     }
     p.inventory.push(p.weaponSlot);
     p.weaponSlot = null;
     Game.save(); Toast.show('📦 ถอดอาวุธเก็บเข้ากระเป๋าแล้ว'); UI.goto('inventory-screen');
   },
-  addUltimateCard(w){
+  addUltimateCard(w, awaken){
     const p = Game.state.player;
+    awaken = awaken||1;
     if(p.deckLimit<4) p.deckLimit = 4;
-    const card = { id:'ult_'+w.id, name:`${w.ultimate.name} (${w.name})`, element:w.element, power:w.ultimate.power,
-      desc:w.ultimate.desc, godTier:true, weaponId:w.id, cardEffect:w.ultimate.effect, cardEffectData:w.ultimate };
+    const card = { id:'ult_'+w.id, name:`${w.ultimate.name} (${w.name})`, element:w.element, power:getScaledUltimatePower(w,awaken),
+      desc:w.ultimate.desc, godTier:true, weaponId:w.id, cardEffect:w.ultimate.effect, cardEffectData:w.ultimate, awaken };
     if(p.deck.length<p.deckLimit){
       p.deck.push(card);
       Toast.show(`🃏✨ ปลดล็อกการ์ดท่าพิเศษ "${w.ultimate.name}"!`);
     } else {
       Toast.show(`⚠️ สำรับเต็ม — ขายการ์ดบางใบเพื่อเปิดที่ให้การ์ดท่าพิเศษ`);
     }
+  },
+  // Called when the currently-equipped godly weapon's tier goes up (via awakening a
+  // duplicate pull) — updates its ultimate card's power in place instead of removing
+  // and re-adding it, so the card doesn't jump around in the deck order.
+  refreshUltimateCardPower(weaponId, awaken, w){
+    const p = Game.state.player;
+    const card = p.deck.find(c=>c.weaponId===weaponId);
+    if(card){ card.power = getScaledUltimatePower(w, awaken); card.awaken = awaken; }
   },
   removeUltimateCard(weaponId){
     const p = Game.state.player;
@@ -3007,10 +3207,10 @@ const Gacha = {
     const wheel = document.getElementById('gacha-wheel'); wheel.classList.remove('spin'); void wheel.offsetWidth; wheel.classList.add('spin');
     let results = []; for(let i=0;i<times;i++) results.push(this.rollOnce(p));
     setTimeout(()=>{
-      const spinsUntilPity = p.gachaSpins % 1000 === 0 ? 1000 : 1000 - (p.gachaSpins % 1000);
+      const spinsUntilPity = p.gachaSpins % 500 === 0 ? 500 : 500 - (p.gachaSpins % 500);
       document.getElementById('gacha-result').innerHTML = results.map(r=>`
         <div class="panel"><span class="badge ${r.tier}">${r.tierLabel}</span><b style="margin-left:6px;">${r.name}</b></div>`).join('') +
-        `<p class="small-text center" style="margin-top:8px;">ทอยกาชาสะสมทั้งหมด: ${p.gachaSpins} ครั้ง (การันตีอาวุธระดับเทพทุกๆ 1,000 ครั้ง — เหลืออีก ${spinsUntilPity} ครั้ง)</p>`;
+        `<p class="small-text center" style="margin-top:8px;">ทอยกาชาสะสมทั้งหมด: ${p.gachaSpins} ครั้ง (การันตีอาวุธระดับเทพทุกๆ 500 ครั้ง — เหลืออีก ${spinsUntilPity} ครั้ง)</p>`;
       Game.save(); Render.hub();
     },1650);
   },
@@ -3026,11 +3226,11 @@ const Gacha = {
   },
   rollOnce(p){
     p.gachaSpins = (p.gachaSpins||0) + 1;
-    // Pity system: the 1000th, 2000th, 3000th... lifetime spin is a guaranteed godly weapon.
-    const pityHit = (p.gachaSpins % 1000 === 0);
+    // Pity system: the 500th, 1000th, 1500th... lifetime spin is a guaranteed godly weapon.
+    const pityHit = (p.gachaSpins % 500 === 0);
     const roll = Math.random();
     // ---- Gacha rarity odds ----
-    // 0.01%  Godly  (10 unique ultimate-skill weapons, plus guaranteed every 1,000th spin)
+    // 0.01%  Godly  (10 unique ultimate-skill weapons, plus guaranteed every 500th spin)
     // 3%     Epic   (highest passive stat boost of the 3 plain tiers, no ultimate)
     // 12%    Rare   (medium passive stat boost)
     // ~85%   Common (small passive stat boost — bulk of pulls, so players almost always
@@ -3038,9 +3238,13 @@ const Gacha = {
     if(pityHit || roll < 0.0001){
       const w = GODLY_WEAPONS[Math.floor(Math.random()*GODLY_WEAPONS.length)];
       grantWeapon(w.id, 'godly');
-      const pityTag = pityHit ? ' (การันตีจากระบบ Pity ครบ 1,000 ครั้ง!)' : '';
-      Toast.show('🌟🌟🌟 อาวุธระดับเทพ!! '+w.name+pityTag);
-      return {name:`${w.name} (${w.nameEn})`+pityTag, tier:'god', tierLabel:pityHit?'GOD-TIER · PITY':'GOD-TIER 0.01%'};
+      const owned = (p.weaponSlot && p.weaponSlot.weaponId===w.id && p.weaponSlot.tier==='godly') ? p.weaponSlot
+        : p.inventory.find(it=>it && it.isWeapon && it.tier==='godly' && it.weaponId===w.id);
+      const awakenNow = owned ? (owned.awaken||1) : 1;
+      const pityTag = pityHit ? ' (การันตีจากระบบ Pity ครบ 500 ครั้ง!)' : '';
+      const tierTag = awakenNow>1 ? ` [ปลุกพลัง Tier ${awakenNow}/${GODLY_AWAKEN_MAX}]` : '';
+      Toast.show('🌟🌟🌟 อาวุธระดับเทพ!! '+w.name+pityTag+tierTag);
+      return {name:`${w.name} (${w.nameEn})`+pityTag+tierTag, tier:'god', tierLabel:pityHit?'GOD-TIER · PITY':'GOD-TIER 0.01%'};
     } else if(roll < 0.03){
       const w = this.pickTierWeapon(p, 'epic');
       grantWeapon(w.id, 'epic');
@@ -3379,4 +3583,4 @@ window.addEventListener('DOMContentLoaded', ()=>{
 window.addEventListener('beforeunload', ()=>{ if(Game.state && Game.state.player) Game.save(); });
 </script>
 </body>
-</html> 
+</html>
